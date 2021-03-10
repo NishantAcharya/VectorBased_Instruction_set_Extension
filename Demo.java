@@ -30,12 +30,12 @@ public class Demo extends Application {
         cache = new Cache(16, RAM);
 
         Scene scene = new Scene(new Group());
-        stage.setTitle("Table View Sample");
+        stage.setTitle("Cache Demo");
         stage.setWidth(400);
         stage.setHeight(500);
 
-        final Label label = new Label("Cache");
-        label.setFont(new Font("Arial", 20));
+//        final Label label = new Label("Cache");
+//        label.setFont(new Font("Arial", 20));
 
         table.setSelectionModel(null);
 
@@ -59,7 +59,7 @@ public class Demo extends Application {
         final VBox vbox = new VBox();
         vbox.setSpacing(5);
         vbox.setPadding(new Insets(10, 0, 0, 10));
-        vbox.getChildren().addAll(label, table);
+        vbox.getChildren().addAll(table);
 
         ((Group) scene.getRoot()).getChildren().addAll(vbox);
 
@@ -69,11 +69,13 @@ public class Demo extends Application {
         demoInstructions();
     }
 
+    int address = 1000;
     public void demoInstructions() {
         new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
-                testRead((int)(Math.random() * 31000));
+                testRead(address);
+                address += Math.random() * 4;
                 demoInstructions();
             }
         }, 1000);

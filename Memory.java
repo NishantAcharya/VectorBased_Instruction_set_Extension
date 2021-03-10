@@ -1,3 +1,5 @@
+import java.util.Random;
+
 public class Memory {
 
     public static int WAIT = -93902354;
@@ -12,6 +14,14 @@ public class Memory {
     public Memory(int numLines, int lineLength) {
         this.size = numLines * lineLength;
         data = new int[numLines][lineLength];
+
+        //REMOVE LATER JUST FOR DEMO TO HAVE RANDOM DATA IN DATA
+        Random rand = new Random();
+        for (int i = 0; i < data.length; i++) {
+            for (int j = 0; j < data[i].length; j++) {
+                data[i][j] = rand.nextInt(10);
+            }
+        }
     }
 
     public Memory(int numLines, int lineLength, int delay) {

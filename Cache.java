@@ -52,9 +52,11 @@ public class Cache extends Memory {
 
         if (tagLoc >= 0) { // Cache hit
             // Read word from cache in location of tag
-            for (int i = 0; i < lru.length; i++) { // Update LRU (0 for nextLoc, +1 for everything else)
-                lru[i] = (tagLoc == i) ? 0 : ((tags[i] == -1) ? -1 : lru[i] + 1);
-                lineData.get(i).setLru(lru[i]);
+            if (lru[tagLoc] != 0) {
+                for (int i = 0; i < lru.length; i++) { // Update LRU (0 for nextLoc, +1 for everything else)
+                    lru[i] = (tagLoc == i) ? 0 : ((tags[i] == -1) ? -1 : lru[i] + 1);
+                    lineData.get(i).setLru(lru[i]);
+                }
             }
 
             return super.read(callingFrom, tagLoc + offset);
