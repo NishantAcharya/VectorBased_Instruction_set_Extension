@@ -15,14 +15,15 @@ public class Memory {
         this.size = numLines * lineLength;
         data = new int[numLines][lineLength];
 
-        /*Memory needs to be set to 0 in each block and the chache needs to be clean
+        /*Memory needs to be set to 0 in each block and the chache needs to be clean*/
         //REMOVE LATER JUST FOR DEMO TO HAVE RANDOM DATA IN DATA
         Random rand = new Random();
         for (int i = 0; i < data.length; i++) {
             for (int j = 0; j < data[i].length; j++) {
-                data[i][j] = rand.nextInt(10);
+                //data[i][j] = rand.nextInt(10);
+                data[i][j] = 0;
             }
-        }*/
+        }
     }
 
     public Memory(int numLines, int lineLength, int delay) {
