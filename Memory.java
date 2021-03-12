@@ -31,13 +31,6 @@ public class Memory {
         this.delay = delay;
         this.size = numLines * lineLength;
         data = new int[numLines][lineLength];
-
-        for (int i = 0; i < data.length; i++) {
-            for (int j = 0; j < data[i].length; j++) {
-                //data[i][j] = rand.nextInt(10);
-                data[i][j] = -1; //Initializing all elements in the cache to -1, which can symbolize invalid value
-            }
-        }
     }
 
     private boolean needsToWait(String callingFrom, int address) {

@@ -24,11 +24,14 @@ public class Cache extends Memory {
         dirty = new boolean[numLines];
         valid = new boolean[numLines];
 
+
         ArrayList<LineData> lineArrayList = new ArrayList<>();
 
         for (int i = 0; i < numLines; i++) {
             tags[i] = -1;
             lru[i] = -1;
+            dirty[i] = false; //Initializing the dirty and the valid bit to false
+            valid[i] = false;
 
             lineArrayList.add(new LineData(-1, -1, -1, -1, -1, -1));
         }
