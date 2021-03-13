@@ -39,7 +39,6 @@ public class Cache extends Memory {
 
         lineData = FXCollections.observableList(lineArrayList);
     }
-//TODO: Check for a valid bit on read
     @Override
     public int read(String callingFrom, int address) {
         int offset = address % 4;
