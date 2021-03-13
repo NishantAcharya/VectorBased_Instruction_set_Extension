@@ -11,18 +11,18 @@ public class Cache extends Memory {
 
     private int[] tags;
     private int[] lru;
-    private boolean[] dirty;
+    private boolean[][] dirty;
     private boolean[] valid;
     public ObservableList<LineData> lineData;
 
     public Cache(int numLines, Memory nextMemory) {
-        super(numLines, 4, 0);
+        super(numLines, 4, 0);//Line length might change in the future
         this.nextMemory = nextMemory;
 
         tags = new int[numLines];
         lru = new int[numLines];
-        dirty = new boolean[numLines];
-        valid = new boolean[numLines];
+        dirty = new boolean[numLines][4];//dirty bit set a double array since a dirty bit is needed for each element
+        valid = new boolean[numLines];//line based valid bit is acceptable because the whole line is pushed out or pushed in the cache at the same time
 
 
         ArrayList<LineData> lineArrayList = new ArrayList<>();
@@ -30,10 +30,15 @@ public class Cache extends Memory {
         for (int i = 0; i < numLines; i++) {
             tags[i] = -1;
             lru[i] = -1;
-            dirty[i] = false; //Initializing the dirty and the valid bit to false
             valid[i] = false;
 
             lineArrayList.add(new LineData(-1, -1, -1, -1, -1, -1));
+        }
+
+        for (int i = 0; i < numLines;i++){
+            for(int j = 0; j < 4;j++){
+                dirty[i][j] = false; // Setting dirty bit to false
+            }
         }
 
 
@@ -43,7 +48,7 @@ public class Cache extends Memory {
     @Override
     public int read(String callingFrom, int address) {
         int offset = address % 4;
-        int tag = address - offset;
+        int tag = address - offset;//getting start of the line
         int tagLoc = -1;
 
         // Check if tag is in cache
@@ -73,13 +78,13 @@ public class Cache extends Memory {
 
             if (line[0] == Memory.WAIT)
                 return Memory.WAIT;
-            //Add with dirty bit set to zero
-            writeToCache(tag, line, false);
+            // address added for writeback in case of dirty bit found on 1
+            writeToCache(tag, line,address);
             return line[offset];
         }
     }
 
-    public void writeToCache(int tag, int[] line, boolean dBit) {
+    public void writeToCache(int tag, int[] line, int address) {
         int nextLoc = -1;
         int maxLRULoc = 0;
 
@@ -99,6 +104,8 @@ public class Cache extends Memory {
         tags[nextLoc] = tag;
         valid[nextLoc] = true; // Setting the new cacheline as valid
 
+        //Checking the dirty bits and writing back to New Memory if the bit is true
+
         writeLine("", nextLoc, line);
 
 
@@ -110,6 +117,8 @@ public class Cache extends Memory {
         }
 
     }
+
+    //Method to do a dirty write
     
 
     // Holds cache line data to display in table
