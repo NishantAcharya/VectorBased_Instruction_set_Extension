@@ -1,3 +1,9 @@
+//Add an interactive demo
+//Implement Cache write(update) and implment idrty bits
+//Implement valid bits in read
+
+//Demo: Empty cache(filled with invalid), Empty memory(filled with 0s), do initial read's from cache, do a write to memory
+//Try to replace the one element and show the change iin memory
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Group;

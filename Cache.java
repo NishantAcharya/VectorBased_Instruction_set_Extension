@@ -39,7 +39,7 @@ public class Cache extends Memory {
 
         lineData = FXCollections.observableList(lineArrayList);
     }
-
+//TODO: Check for a valid bit on read
     @Override
     public int read(String callingFrom, int address) {
         int offset = address % 4;
@@ -52,6 +52,10 @@ public class Cache extends Memory {
                 tagLoc = i;
                 break;
             }
+
+        if(!valid[tagLoc]){
+            return 404; //Return 404 if the reading an invalid bit
+        }
 
         if (tagLoc >= 0) { // Cache hit
             // Read word from cache in location of tag
@@ -69,13 +73,13 @@ public class Cache extends Memory {
 
             if (line[0] == Memory.WAIT)
                 return Memory.WAIT;
-
-            writeToCache(tag, line);
+            //Add with dirty bit set to zero
+            writeToCache(tag, line, 0);
             return line[offset];
         }
     }
 
-    public void writeToCache(int tag, int[] line) {
+    public void writeToCache(int tag, int[] line, int dBit) {
         int nextLoc = -1;
         int maxLRULoc = 0;
 
@@ -91,8 +95,11 @@ public class Cache extends Memory {
             nextLoc = maxLRULoc;
 
         // Set tag and write line to cache in chosen location
+        //TODO: Check if the dirty bit is 1, if it is then write back to memory
         tags[nextLoc] = tag;
+        valid[nextLoc] = true; // Setting the new cacheline as valid
         writeLine("", nextLoc, line);
+
 
         lineData.set(nextLoc, new LineData(0, tag, line[0], line[1], line[2], line[3]));
 
@@ -102,6 +109,7 @@ public class Cache extends Memory {
         }
 
     }
+    
 
     // Holds cache line data to display in table
     public class LineData {
