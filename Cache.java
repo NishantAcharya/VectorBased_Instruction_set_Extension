@@ -79,12 +79,12 @@ public class Cache extends Memory {
             if (line[0] == Memory.WAIT)
                 return Memory.WAIT;
             // address added for writeback in case of dirty bit found on 1
-            writeToCache(tag, line,address);
+            writeToCache(tag, line,address,callingFrom,new boolean[4]);
             return line[offset];
         }
     }
 
-    public void writeToCache(int tag, int[] line, int address) {
+    public void writeToCache(int tag, int[] line, int address, String callingFrom, boolean[] dbits) {
         int nextLoc = -1;
         int maxLRULoc = 0;
 
@@ -100,12 +100,16 @@ public class Cache extends Memory {
             nextLoc = maxLRULoc;
 
         // Set tag and write line to cache in chosen location
-        //TODO: Check if the dirty bit is 1, if it is then write back to memory
         tags[nextLoc] = tag;
         valid[nextLoc] = true; // Setting the new cacheline as valid
+        dirty[nextLoc] = dbits; //Setting the dbits on the cache line, this works because we will just write a whole line when writing a single word in the cache
 
         //Checking the dirty bits and writing back to New Memory if the bit is true
-
+        for(int i = 0; i < 4; i++){
+            if(dirty[nextLoc][i]){
+                nextMemory.write("",address,super.read(callingFrom, nextLoc + i));
+            }
+        }
         writeLine("", nextLoc, line);
 
 
@@ -118,8 +122,6 @@ public class Cache extends Memory {
 
     }
 
-    //Method to do a dirty write
-    
 
     // Holds cache line data to display in table
     public class LineData {
