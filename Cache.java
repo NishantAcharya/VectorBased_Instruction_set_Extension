@@ -39,6 +39,7 @@ public class Cache extends Memory {
 
         lineData = FXCollections.observableList(lineArrayList);
     }
+
     @Override
     public int read(String callingFrom, int address) {
         int offset = address % 4;
@@ -73,12 +74,12 @@ public class Cache extends Memory {
             if (line[0] == Memory.WAIT)
                 return Memory.WAIT;
             //Add with dirty bit set to zero
-            writeToCache(tag, line, 0);
+            writeToCache(tag, line, false);
             return line[offset];
         }
     }
 
-    public void writeToCache(int tag, int[] line, int dBit) {
+    public void writeToCache(int tag, int[] line, boolean dBit) {
         int nextLoc = -1;
         int maxLRULoc = 0;
 
@@ -97,6 +98,7 @@ public class Cache extends Memory {
         //TODO: Check if the dirty bit is 1, if it is then write back to memory
         tags[nextLoc] = tag;
         valid[nextLoc] = true; // Setting the new cacheline as valid
+
         writeLine("", nextLoc, line);
 
 
