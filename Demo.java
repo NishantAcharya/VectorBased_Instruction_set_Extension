@@ -74,12 +74,19 @@ public class Demo extends Application {
 
     int address = 1000;
     public void demoInstructions() {
-        new Timer().schedule(new TimerTask() {
+       new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
-                testRead(address);
-                address += Math.random() * 4;
-                demoInstructions();
+                //Warming up the cache
+                for(int i = 0; i < 16; i++){
+                    testRead(address);
+                    address += 4;
+                }
+
+                cache.directWrite(1000 - 1000%4, new int[]{1,14,12,13},1000,"Main",new boolean[]{true,true,false,true});
+                cache.directWrite(1020 - 1020%4, new int[]{2,22,11,100},1000,"Main",new boolean[]{false,false,false,false});
+                //demoInstructions();
+
             }
         }, 1000);
     }

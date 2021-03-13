@@ -52,18 +52,20 @@ public class Cache extends Memory {
         int tagLoc = -1;
 
         // Check if tag is in cache
-        for (int i = 0; i < tags.length; i++)
+        for (int i = 0; i < tags.length; i++) {
             if (tags[i] == tag) {
                 tagLoc = i;
                 break;
             }
-
-        if(!valid[tagLoc]){
-            return 404; //Return 404 if the reading an invalid bit
         }
+
 
         if (tagLoc >= 0) { // Cache hit
             // Read word from cache in location of tag
+
+            if(!valid[tagLoc]){
+                return 404; //Return 404 if the reading an invalid bit
+            }
             if (lru[tagLoc] != 0) {
                 for (int i = 0; i < lru.length; i++) { // Update LRU (0 for nextLoc, +1 for everything else)
                     lru[i] = (tagLoc == i) ? 0 : ((tags[i] == -1) ? -1 : lru[i] + 1);
@@ -122,6 +124,40 @@ public class Cache extends Memory {
 
     }
 
+    //Direct Write to cache
+    public void directWrite(int tag, int[] line, int address, String callingFrom, boolean[] dbits){
+        int offset = address % 4;
+        int tagLoc = -1;
+
+        // Check if tag is in cache
+        for (int i = 0; i < tags.length; i++) {
+            if (tags[i] == tag) {
+                tagLoc = i;
+                break;
+            }
+        }
+
+        if(tagLoc >=0){
+            lineData.set(tagLoc, new LineData(0, tag, line[0], line[1], line[2], line[3]));
+            int prevLocVal = lru[tagLoc];
+            for (int i = 0; i < lru.length; i++) { // Update LRU (0 for tagLoc, +1 for everything else smaller than tagLoc(original val))
+                if(i == tagLoc){
+                    lru[i] = 0;
+                }
+                else if(lru[i] < prevLocVal){
+                    lru[i] += 1;
+                }
+                lineData.get(i).setLru(lru[i]);
+            }
+            writeLine("", tagLoc, line);
+
+        }
+        else{
+            writeToCache(tag,line,address,callingFrom,dbits);
+        }
+
+
+    }
 
     // Holds cache line data to display in table
     public class LineData {
