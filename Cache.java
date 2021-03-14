@@ -110,6 +110,7 @@ public class Cache extends Memory {
             if(dirty[nextLoc][i]){
                 int temp = super.readCache("",nextLoc+i);
                 int out = Memory.WAIT;
+                System.out.println("Trying to writeback to memory at address " + (tag+i));
                 while (out == Memory.WAIT) {
                     out = nextMemory.write("",address+i,temp);
                     System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
@@ -161,6 +162,7 @@ public class Cache extends Memory {
                 if(dirty[tagLoc][i]){
                     int temp = super.readCache("",tagLoc+i);
                     int out = Memory.WAIT;
+                    System.out.println("Trying to writeback to memory at address " + (tag+i));
                     while (out == Memory.WAIT) {
                         out = nextMemory.write("",address+i,temp);
                         System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
