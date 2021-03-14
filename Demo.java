@@ -15,13 +15,15 @@ import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
+import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class Demo extends Application {
 
     private TableView table = new TableView();
-    Cache cache;
+    private Memory RAM;
+    private Cache cache;
 
     public static void main(String[] args) {
         launch(args);
@@ -29,12 +31,12 @@ public class Demo extends Application {
 
     @Override
     public void start(Stage stage) {
-        Memory RAM = new Memory(8000, 4);
+        RAM = new Memory(8000, 4);
         cache = new Cache(16, RAM);
 
         Scene scene = new Scene(new Group());
         stage.setTitle("Cache Demo");
-        stage.setWidth(400);
+        stage.setWidth(500);
         stage.setHeight(500);
 
 //        final Label label = new Label("Cache");
@@ -46,16 +48,26 @@ public class Demo extends Application {
         lruCol.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("lru"));
         TableColumn tagCol = new TableColumn("TAG");
         tagCol.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("tag"));
+        TableColumn validCol = new TableColumn("V");
+        validCol.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("v"));
         TableColumn w1Col = new TableColumn("Word 1");
         w1Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("word1"));
+        TableColumn d1Col = new TableColumn("D1");
+        d1Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("d1"));
         TableColumn w2Col = new TableColumn("Word 2");
         w2Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("word2"));
+        TableColumn d2Col = new TableColumn("D2");
+        d2Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("d2"));
         TableColumn w3Col = new TableColumn("Word 3");
         w3Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("word3"));
+        TableColumn d3Col = new TableColumn("D3");
+        d3Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("d3"));
         TableColumn w4Col = new TableColumn("Word 4");
         w4Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("word4"));
+        TableColumn d4Col = new TableColumn("D4");
+        d4Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("d4"));
 
-        table.getColumns().addAll(lruCol, tagCol, w1Col, w2Col, w3Col, w4Col);
+        table.getColumns().addAll(lruCol, tagCol, validCol, w1Col, w2Col, w3Col, w4Col, d1Col, d2Col, d3Col, d4Col);
         table.setItems(cache.lineData);
 
 
@@ -76,15 +88,16 @@ public class Demo extends Application {
 
     int address = 1000;
     public void demoInstructions() {
-                //Warming up the cache
-                for(int i = 0; i < 16; i++){
-                    testRead(address);
-                    address += 4;
-                }
+        // Warming up the cache
+        for(int i = 0; i < 16; i++){
+            testRead(address);
+            address += 4;
+        }
 
-                cache.directWrite(1000 - 1000%4, new int[]{1,14,12,13},1000,"Main",new boolean[]{true,true,false,true});
-                cache.directWrite(1000 - 1000%4, new int[]{2,22,12,100},1000,"Main",new boolean[]{false,false,false,false});
+        cache.directWrite(1000 - 1000%4, new int[]{1,14,12,13},1000,"Main",new boolean[]{true,true,false,true});
+        cache.directWrite(1000 - 1000%4, new int[]{2,22,12,100},1000,"Main",new boolean[]{false,false,false,false});
 
+        RAM.printData(1000,1064);
     }
 
     public void testRead(int address) {

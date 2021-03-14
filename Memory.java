@@ -1,3 +1,4 @@
+import java.util.Arrays;
 import java.util.Random;
 
 public class Memory {
@@ -107,5 +108,22 @@ public class Memory {
         int lineNum = (address - offset) / lineLength;
 
         return data[lineNum][offset];
+    }
+
+    public void printData() {
+        for (int i = 0; i < data.length; i++) {
+            int[] row = data[i];
+            System.out.println((i * 4) +  ": " + Arrays.toString(row));
+        }
+    }
+
+    public void printData(int fromAddr, int toAddr) {
+        if (fromAddr == -1) fromAddr = 0;
+        if (toAddr == -1) toAddr = data.length * 4;
+
+        for (int i = fromAddr / 4; i < toAddr / 4 + 1; i++) {
+            int[] row = data[i];
+            System.out.println((i * 4) +  ": " + Arrays.toString(row));
+        }
     }
 }

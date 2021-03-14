@@ -32,15 +32,12 @@ public class Cache extends Memory {
             lru[i] = -1;
             valid[i] = false;
 
-            lineArrayList.add(new LineData(-1, -1, -1, -1, -1, -1));
-        }
-
-        for (int i = 0; i < numLines;i++){
             for(int j = 0; j < 4;j++){
                 dirty[i][j] = false; // Setting dirty bit to false
             }
-        }
 
+            lineArrayList.add(new LineData(-1, -1, -1, -1, -1, -1));
+        }
 
         lineData = FXCollections.observableList(lineArrayList);
     }
@@ -63,9 +60,10 @@ public class Cache extends Memory {
         if (tagLoc >= 0) { // Cache hit
             // Read word from cache in location of tag
 
-            if(!valid[tagLoc]){
+            if (!valid[tagLoc]){
                 return 404; //Return 404 if the reading an invalid bit
             }
+
             if (lru[tagLoc] != 0) {
                 for (int i = 0; i < lru.length; i++) { // Update LRU (0 for nextLoc, +1 for everything else)
                     lru[i] = (tagLoc == i) ? 0 : ((tags[i] == -1) ? -1 : lru[i] + 1);
@@ -81,7 +79,7 @@ public class Cache extends Memory {
             if (line[0] == Memory.WAIT)
                 return Memory.WAIT;
             // address added for writeback in case of dirty bit found on 1
-            writeToCache(tag, line,address,callingFrom,new boolean[4]);
+            writeToCache(tag, line, address, callingFrom, new boolean[4]);
             return line[offset];
         }
     }
@@ -105,26 +103,29 @@ public class Cache extends Memory {
         tags[nextLoc] = tag;
         valid[nextLoc] = true; // Setting the new cacheline as valid
 
-        //Checking the dirty bits and writing back to New Memory if the bit is true
-        for(int i = 0; i < 4; i++){
-            if(dirty[nextLoc][i]){
+        // Checking the dirty bits and writing back to New Memory if the bit is true
+        for (int i = 0; i < 4; i++){
+            if (dirty[nextLoc][i]){
                 int temp = super.readCache("",nextLoc+i);
                 int out = Memory.WAIT;
+
                 System.out.println("Trying to writeback to memory at address " + (tag+i));
                 while (out == Memory.WAIT) {
-                    out = nextMemory.write("",address+i,temp);
+                    out = nextMemory.write(callingFrom,address+i,temp);
                     System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
                 }
             }
         }
-        //Setting the dbits on the cache line, this works because we will just write a whole line when writing a single word in the cache
-        for(int i = 0; i < dbits.length;i++){
-            dirty[nextLoc][i] = dbits[i];
-        }
-        writeLine("", nextLoc, line);
 
-
+        writeLine(callingFrom, nextLoc, line);
         lineData.set(nextLoc, new LineData(0, tag, line[0], line[1], line[2], line[3]));
+        lineData.get(nextLoc).v.set(1);
+
+        //Setting the dbits on the cache line, this works because we will just write a whole line when writing a single word in the cache
+        for (int i = 0; i < dbits.length;i++){
+            dirty[nextLoc][i] = dbits[i];
+            lineData.get(nextLoc).setDirtyBit(i, dbits[i]);
+        }
 
         for (int i = 0; i < lru.length; i++) { // Update LRU (0 for nextLoc, +1 for everything else)
             lru[i] = (nextLoc == i) ? 0 : ((tags[i] == -1) ? -1 : lru[i] + 1);
@@ -145,7 +146,7 @@ public class Cache extends Memory {
             }
         }
 
-        if(tagLoc >=0){
+        if(tagLoc >= 0) {
             lineData.set(tagLoc, new LineData(0, tag, line[0], line[1], line[2], line[3]));
             int prevLocVal = lru[tagLoc];
             for (int i = 0; i < lru.length; i++) { // Update LRU (0 for tagLoc, +1 for everything else smaller than tagLoc(original val))
@@ -169,16 +170,19 @@ public class Cache extends Memory {
                     }
                 }
             }
-            writeLine("", tagLoc, line);
-            tags[tagLoc] = tag;
-            valid[tagLoc] = true; // Setting the new cacheline as valid
-            //Setting the dbits on the cache line, this works because we will just write a whole line when writing a single word in the cache
-            for(int i = 0; i < dbits.length;i++){
-                dirty[tagLoc][i] = dbits[i];
-            }
 
-        }
-        else{
+            writeLine(callingFrom, tagLoc, line);
+            tags[tagLoc] = tag;
+
+            valid[tagLoc] = true; // Setting the new cacheline as valid
+            lineData.get(tagLoc).v.set(1);
+
+            //Setting the dbits on the cache line, this works because we will just write a whole line when writing a single word in the cache
+            for (int i = 0; i < dbits.length;i++){
+                dirty[tagLoc][i] = dbits[i];
+                lineData.get(tagLoc).setDirtyBit(i, dbits[i]);
+            }
+        } else {
             writeToCache(tag,line,address,callingFrom,dbits);
         }
 
@@ -187,7 +191,7 @@ public class Cache extends Memory {
 
     // Holds cache line data to display in table
     public class LineData {
-        public SimpleIntegerProperty lru, tag, word1, word2, word3, word4;
+        public SimpleIntegerProperty lru, tag, v, word1, word2, word3, word4, d1, d2, d3, d4;
 
         public LineData(int lru, int tag, int word1, int word2, int word3, int word4) {
             this.lru = new SimpleIntegerProperty(lru);
@@ -196,6 +200,29 @@ public class Cache extends Memory {
             this.word2 = new SimpleIntegerProperty(word2);
             this.word3 = new SimpleIntegerProperty(word3);
             this.word4 = new SimpleIntegerProperty(word4);
+
+            this.v = new SimpleIntegerProperty(0);
+            this.d1 = new SimpleIntegerProperty(0);
+            this.d2 = new SimpleIntegerProperty(0);
+            this.d3 = new SimpleIntegerProperty(0);
+            this.d4 = new SimpleIntegerProperty(0);
+        }
+
+        public void setDirtyBit(int bit, boolean val) {
+            switch (bit) {
+                case 0:
+                    d1.set(val ? 1 : 0);
+                    break;
+                case 1:
+                    d2.set(val ? 1 : 0);
+                    break;
+                case 2:
+                    d3.set(val ? 1 : 0);
+                    break;
+                case 4:
+                    d4.set(val ? 1 : 0);
+                    break;
+            }
         }
 
         public void setLru(int lru) {
@@ -224,6 +251,26 @@ public class Cache extends Memory {
 
         public int getWord4() {
             return word4.get();
+        }
+
+        public int getV() {
+            return v.get();
+        }
+
+        public int getD1() {
+            return d1.get();
+        }
+
+        public int getD2() {
+            return d2.get();
+        }
+
+        public int getD3() {
+            return d3.get();
+        }
+
+        public int getD4() {
+            return d4.get();
         }
     }
 }
