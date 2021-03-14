@@ -70,13 +70,12 @@ public class Demo extends Application {
         stage.show();
 
         demoInstructions();
+        System.out.println(RAM.readCache("",1000));
+
     }
 
     int address = 1000;
     public void demoInstructions() {
-       new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
                 //Warming up the cache
                 for(int i = 0; i < 16; i++){
                     testRead(address);
@@ -84,11 +83,8 @@ public class Demo extends Application {
                 }
 
                 cache.directWrite(1000 - 1000%4, new int[]{1,14,12,13},1000,"Main",new boolean[]{true,true,false,true});
-                cache.directWrite(1020 - 1020%4, new int[]{2,22,11,100},1000,"Main",new boolean[]{false,false,false,false});
-                //demoInstructions();
+                cache.directWrite(1000 - 1000%4, new int[]{2,22,12,100},1000,"Main",new boolean[]{false,false,false,false});
 
-            }
-        }, 1000);
     }
 
     public void testRead(int address) {

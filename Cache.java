@@ -104,13 +104,21 @@ public class Cache extends Memory {
         // Set tag and write line to cache in chosen location
         tags[nextLoc] = tag;
         valid[nextLoc] = true; // Setting the new cacheline as valid
-        dirty[nextLoc] = dbits; //Setting the dbits on the cache line, this works because we will just write a whole line when writing a single word in the cache
 
         //Checking the dirty bits and writing back to New Memory if the bit is true
         for(int i = 0; i < 4; i++){
             if(dirty[nextLoc][i]){
-                nextMemory.write("",address,super.read(callingFrom, nextLoc + i));
+                int temp = super.readCache("",nextLoc+i);
+                int out = Memory.WAIT;
+                while (out == Memory.WAIT) {
+                    out = nextMemory.write("",address+i,temp);
+                    System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
+                }
             }
+        }
+        //Setting the dbits on the cache line, this works because we will just write a whole line when writing a single word in the cache
+        for(int i = 0; i < dbits.length;i++){
+            dirty[nextLoc][i] = dbits[i];
         }
         writeLine("", nextLoc, line);
 
@@ -126,7 +134,6 @@ public class Cache extends Memory {
 
     //Direct Write to cache
     public void directWrite(int tag, int[] line, int address, String callingFrom, boolean[] dbits){
-        int offset = address % 4;
         int tagLoc = -1;
 
         // Check if tag is in cache
@@ -149,7 +156,24 @@ public class Cache extends Memory {
                 }
                 lineData.get(i).setLru(lru[i]);
             }
+            //Checking the dirty bits and writing back to New Memory if the bit is true
+            for(int i = 0; i < 4; i++){
+                if(dirty[tagLoc][i]){
+                    int temp = super.readCache("",tagLoc+i);
+                    int out = Memory.WAIT;
+                    while (out == Memory.WAIT) {
+                        out = nextMemory.write("",address+i,temp);
+                        System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
+                    }
+                }
+            }
             writeLine("", tagLoc, line);
+            tags[tagLoc] = tag;
+            valid[tagLoc] = true; // Setting the new cacheline as valid
+            //Setting the dbits on the cache line, this works because we will just write a whole line when writing a single word in the cache
+            for(int i = 0; i < dbits.length;i++){
+                dirty[tagLoc][i] = dbits[i];
+            }
 
         }
         else{
