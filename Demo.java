@@ -127,12 +127,12 @@ public class Demo extends Application {
             address -= 4;
         }
 
-        System.out.println("\nDisplaying the Memory(RAM) to show dirty bit changes\n");
+        System.out.println("\nDisplaying the Memory(RAM) to show value updates\n");
         RAM.printData(1000,1064);
 
         System.out.println("\n Random Writes and reads to show working LRU and dirty bit writebacks\n");
         cache.directWrite(1000 - 1000%4, new int[]{0,0,0,0},1000,"Main",new boolean[]{true,false,true,true});
-        cache.directWrite(1000 - 1000%4, new int[]{0,0,0,0},1000,"Main",new boolean[]{false,false,false,true});
+        cache.directWrite(1000 - 1000%4, new int[]{1,1,1,1},1000,"Main",new boolean[]{false,false,false,true});
         cache.directWrite(1000 - 1000%4, new int[]{0,0,0,0},1000,"Main",new boolean[]{true,false,true,false});
         testRead(1015);
         testRead(1046);
