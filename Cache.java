@@ -71,7 +71,7 @@ public class Cache extends Memory {
                 }
             }
 
-            return super.readCache(callingFrom, tagLoc + offset);
+            return super.read(callingFrom, tagLoc + offset);
         } else { // Cache miss
             // Read from next memory, wait if needed
             int[] line = nextMemory.getLine(callingFrom, address);
