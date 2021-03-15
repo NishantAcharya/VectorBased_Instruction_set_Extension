@@ -284,5 +284,19 @@ public class Cache extends Memory {
             return d4.get();
         }
     }
+    //Display functions
+    public void displayLRU(){
+        for (int i = 0; i < lru.length; i++) {
+            int row = lru[i];
+            System.out.println((i) +  ": " + row);
+        }
+    }
+
+    public void displayDirty(){
+        for (int i = 0; i < lru.length; i++) {
+            boolean[] row = dirty[i];
+            System.out.println((i * 4) +  ": " + Arrays.toString(row));
+        }
+    }
 
 }

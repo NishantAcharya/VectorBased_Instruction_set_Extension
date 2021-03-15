@@ -95,6 +95,12 @@ public class Demo extends Application {
         System.out.println("\nShowing empty cache\n");
         cache.printData();
 
+        System.out.println("\nShowing LRU\n");
+        cache.displayLRU();
+
+        System.out.println("\nShowing dirty bit\n");
+        cache.displayDirty();
+
         // Warming up the cache
         System.out.println("\nWarming up cache, All values non-cached\n");
         for(int i = 0; i < 16; i++){
@@ -107,13 +113,18 @@ public class Demo extends Application {
         address = 1000;
         Random rand = new Random();
         for(int i = 0; i < 16; i++){
-            System.out.println("Writing to address" + address);
-            cache.directWrite(address - address%4, new int[]{rand.nextInt(100),rand.nextInt(100),rand.nextInt(100),rand.nextInt(100)},address,"Main",new boolean[]{rand.nextBoolean(),rand.nextBoolean(),rand.nextBoolean(),rand.nextBoolean()});
+            int[] val = {rand.nextInt(100),rand.nextInt(100),rand.nextInt(100),rand.nextInt(100)};
+            boolean[] dirty = {rand.nextBoolean(),rand.nextBoolean(),rand.nextBoolean(),rand.nextBoolean()};
+            System.out.println("Writing to address " + address + "\n The written values for the line are " + Arrays.toString(val) + "\n dity bit values " + Arrays.toString(dirty)+"\n");
+            cache.directWrite(address - address%4, val ,address,"Main",dirty);
             address += 4;
         }
 
         System.out.println("\nShowing cache\n");
         cache.printData();
+
+        System.out.println("\nShowing dirty bit\n");
+        cache.displayDirty();
 
         System.out.println("\nDisplaying the Memory(RAM) to show value updates\n");
         RAM.printData(1000,1064);
@@ -121,13 +132,18 @@ public class Demo extends Application {
         System.out.println("\nWriting to the cache again to display dirty bit writebacks\n");
         address = 1000;
         for(int i = 0; i < 16; i++){
-            System.out.println("Writing to address" + address);
-            cache.directWrite(address - address%4, new int[]{rand.nextInt(100),rand.nextInt(100),rand.nextInt(100),rand.nextInt(100)},address,"Main",new boolean[]{rand.nextBoolean(),rand.nextBoolean(),rand.nextBoolean(),rand.nextBoolean()});
+            int[] val = {rand.nextInt(100),rand.nextInt(100),rand.nextInt(100),rand.nextInt(100)};
+            boolean[] dirty = {rand.nextBoolean(),rand.nextBoolean(),rand.nextBoolean(),rand.nextBoolean()};
+            System.out.println("Writing to address " + address + "\n The written values for the line are " + Arrays.toString(val) + "\n dity bit values " + Arrays.toString(dirty) + "\n");
+            cache.directWrite(address - address%4,val ,address,"Main", dirty);
             address += 4;
         }
 
-        System.out.println("\nShowing empty cache\n");
+        System.out.println("\nShowing cache\n");
         cache.printData();
+
+        System.out.println("\nShowing dirty bit\n");
+        cache.displayDirty();
 
         System.out.println("\nDisplaying the Memory(RAM) to show value updates\n");
         RAM.printData(1000,1064);
