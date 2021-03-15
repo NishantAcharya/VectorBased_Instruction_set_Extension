@@ -91,10 +91,9 @@ public class Demo extends Application {
     public void demoInstructions() {
         System.out.println("\nShowing Memory Initially\n");
         RAM.printData(1000,1064);
+
         System.out.println("\nShowing empty cache\n");
         cache.printData();
-
-
 
         // Warming up the cache
         System.out.println("\nWarming up cache, All values non-cached\n");
@@ -102,6 +101,7 @@ public class Demo extends Application {
             testRead(address);
             address += 4;
         }
+
 
         System.out.println("\nWriting to the cache\n");
         address = 1000;
@@ -112,6 +112,12 @@ public class Demo extends Application {
             address += 4;
         }
 
+        System.out.println("\nShowing cache\n");
+        cache.printData();
+
+        System.out.println("\nDisplaying the Memory(RAM) to show value updates\n");
+        RAM.printData(1000,1064);
+
         System.out.println("\nWriting to the cache again to display dirty bit writebacks\n");
         address = 1000;
         for(int i = 0; i < 16; i++){
@@ -120,6 +126,12 @@ public class Demo extends Application {
             address += 4;
         }
 
+        System.out.println("\nShowing empty cache\n");
+        cache.printData();
+
+        System.out.println("\nDisplaying the Memory(RAM) to show value updates\n");
+        RAM.printData(1000,1064);
+
         System.out.println("\nReading from cache to show delay difference\n");
         address = 1060;
         for(int i = 0; i < 16; i++){
@@ -127,15 +139,13 @@ public class Demo extends Application {
             address -= 4;
         }
 
-        System.out.println("\nDisplaying the Memory(RAM) to show value updates\n");
-        RAM.printData(1000,1064);
 
         System.out.println("\n Random Writes and reads to show working LRU and dirty bit writebacks\n");
         cache.directWrite(1000 - 1000%4, new int[]{0,0,0,0},1000,"Main",new boolean[]{true,false,true,true});
         cache.directWrite(1000 - 1000%4, new int[]{1,1,1,1},1000,"Main",new boolean[]{false,false,false,true});
         cache.directWrite(1000 - 1000%4, new int[]{0,0,0,0},1000,"Main",new boolean[]{true,false,true,false});
 
-        System.out.println("cached Read");
+        System.out.println("\ncached Read\n");
         testRead(1015);
         testRead(1046);
 
