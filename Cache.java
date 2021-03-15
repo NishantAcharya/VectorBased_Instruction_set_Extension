@@ -3,6 +3,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Observable;
 
 public class Cache extends Memory {
@@ -64,11 +65,21 @@ public class Cache extends Memory {
                 return 404; //Return 404 if the reading an invalid bit
             }
 
-            if (lru[tagLoc] != 0) {
+            /*if (lru[tagLoc] != 0) {
                 for (int i = 0; i < lru.length; i++) { // Update LRU (0 for nextLoc, +1 for everything else)
                     lru[i] = (tagLoc == i) ? 0 : ((tags[i] == -1) ? -1 : lru[i] + 1);
                     lineData.get(i).setLru(lru[i]);
                 }
+            }*/
+            int prevLocVal = lru[tagLoc];
+            for (int i = 0; i < lru.length; i++) { // Update LRU (0 for tagLoc, +1 for everything else smaller than tagLoc(original val))
+                if(i == tagLoc){
+                    lru[i] = 0;
+                }
+                else if(lru[i] < prevLocVal && lru[i] != -1){
+                    lru[i] += 1;
+                }
+                lineData.get(i).setLru(lru[i]);
             }
 
             return super.read(callingFrom, tagLoc + offset);
@@ -153,7 +164,7 @@ public class Cache extends Memory {
                 if(i == tagLoc){
                     lru[i] = 0;
                 }
-                else if(lru[i] < prevLocVal){
+                else if(lru[i] < prevLocVal && lru[i] != -1){
                     lru[i] += 1;
                 }
                 lineData.get(i).setLru(lru[i]);
@@ -273,4 +284,5 @@ public class Cache extends Memory {
             return d4.get();
         }
     }
+
 }

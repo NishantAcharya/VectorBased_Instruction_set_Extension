@@ -18,6 +18,8 @@ import javafx.util.StringConverter;
 import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 public class Demo extends Application {
 
@@ -82,21 +84,60 @@ public class Demo extends Application {
         stage.show();
 
         demoInstructions();
-        System.out.println(RAM.readCache("",1000));
 
     }
 
     int address = 1000;
     public void demoInstructions() {
+        System.out.println("\nShowing Memory Initially\n");
+        RAM.printData(1000,1064);
+        System.out.println("\nShowing empty cache\n");
+        cache.printData();
+
+
+
         // Warming up the cache
+        System.out.println("\nWarming up cache, All values non-cached\n");
         for(int i = 0; i < 16; i++){
             testRead(address);
             address += 4;
         }
 
-        cache.directWrite(1000 - 1000%4, new int[]{1,14,12,13},1000,"Main",new boolean[]{true,true,false,true});
-        cache.directWrite(1000 - 1000%4, new int[]{2,22,12,100},1000,"Main",new boolean[]{false,false,false,false});
+        System.out.println("\nWriting to the cache\n");
+        address = 1000;
+        Random rand = new Random();
+        for(int i = 0; i < 16; i++){
+            System.out.println("Writing to address" + address);
+            cache.directWrite(address - address%4, new int[]{rand.nextInt(100),rand.nextInt(100),rand.nextInt(100),rand.nextInt(100)},address,"Main",new boolean[]{rand.nextBoolean(),rand.nextBoolean(),rand.nextBoolean(),rand.nextBoolean()});
+            address += 4;
+        }
 
+        System.out.println("\nWriting to the cache again to display dirty bit writebacks\n");
+        address = 1000;
+        for(int i = 0; i < 16; i++){
+            System.out.println("Writing to address" + address);
+            cache.directWrite(address - address%4, new int[]{rand.nextInt(100),rand.nextInt(100),rand.nextInt(100),rand.nextInt(100)},address,"Main",new boolean[]{rand.nextBoolean(),rand.nextBoolean(),rand.nextBoolean(),rand.nextBoolean()});
+            address += 4;
+        }
+
+        System.out.println("\nReading from cache to show delay difference\n");
+        address = 1060;
+        for(int i = 0; i < 16; i++){
+            testRead(address);
+            address -= 4;
+        }
+
+        System.out.println("\nDisplaying the Memory(RAM) to show dirty bit changes\n");
+        RAM.printData(1000,1064);
+
+        System.out.println("\n Random Writes and reads to show working LRU and dirty bit writebacks\n");
+        cache.directWrite(1000 - 1000%4, new int[]{0,0,0,0},1000,"Main",new boolean[]{true,false,true,true});
+        cache.directWrite(1000 - 1000%4, new int[]{0,0,0,0},1000,"Main",new boolean[]{false,false,false,true});
+        cache.directWrite(1000 - 1000%4, new int[]{0,0,0,0},1000,"Main",new boolean[]{true,false,true,false});
+        testRead(1015);
+        testRead(1046);
+
+        System.out.println("\nDisplaying the Memory(RAM) to show dirty bit changes\n");
         RAM.printData(1000,1064);
     }
 
