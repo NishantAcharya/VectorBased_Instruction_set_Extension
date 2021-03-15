@@ -134,6 +134,8 @@ public class Demo extends Application {
         cache.directWrite(1000 - 1000%4, new int[]{0,0,0,0},1000,"Main",new boolean[]{true,false,true,true});
         cache.directWrite(1000 - 1000%4, new int[]{1,1,1,1},1000,"Main",new boolean[]{false,false,false,true});
         cache.directWrite(1000 - 1000%4, new int[]{0,0,0,0},1000,"Main",new boolean[]{true,false,true,false});
+
+        System.out.println("cached Read");
         testRead(1015);
         testRead(1046);
 
