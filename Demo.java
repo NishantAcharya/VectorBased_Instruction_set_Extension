@@ -149,10 +149,10 @@ public class Demo extends Application {
         RAM.printData(1000,1064);
 
         System.out.println("\nReading from cache to show delay difference\n");
-        address = 1060;
+        address = 1000;
         for(int i = 0; i < 16; i++){
             testRead(address);
-            address -= 4;
+            address += 4;
         }
 
 
@@ -169,7 +169,7 @@ public class Demo extends Application {
         RAM.printData(1000,1064);
     }
 
-    public void testRead(int address) {
+    public int testRead(int address) {
         System.out.println("Trying to read value at " + address + " from cache");
         int out = Memory.WAIT;
 
@@ -177,5 +177,6 @@ public class Demo extends Application {
             out = cache.read("Main", address);
             System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
         }
+        return out;
     }
 }

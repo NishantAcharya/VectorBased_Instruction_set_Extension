@@ -64,13 +64,6 @@ public class Cache extends Memory {
             if (!valid[tagLoc]){
                 return 404; //Return 404 if the reading an invalid bit
             }
-
-            /*if (lru[tagLoc] != 0) {
-                for (int i = 0; i < lru.length; i++) { // Update LRU (0 for nextLoc, +1 for everything else)
-                    lru[i] = (tagLoc == i) ? 0 : ((tags[i] == -1) ? -1 : lru[i] + 1);
-                    lineData.get(i).setLru(lru[i]);
-                }
-            }*/
             int prevLocVal = lru[tagLoc];
             for (int i = 0; i < lru.length; i++) { // Update LRU (0 for tagLoc, +1 for everything else smaller than tagLoc(original val))
                 if(i == tagLoc){
@@ -82,7 +75,7 @@ public class Cache extends Memory {
                 lineData.get(i).setLru(lru[i]);
             }
 
-            return super.read(callingFrom, tagLoc + offset);
+            return super.readCache(callingFrom, tagLoc,offset);
         } else { // Cache miss
             // Read from next memory, wait if needed
             int[] line = nextMemory.getLine(callingFrom, address);
@@ -117,7 +110,7 @@ public class Cache extends Memory {
         // Checking the dirty bits and writing back to New Memory if the bit is true
         for (int i = 0; i < 4; i++){
             if (dirty[nextLoc][i]){
-                int temp = super.readCache("",nextLoc+i);
+                int temp = super.readCache("",nextLoc,i);
                 int out = Memory.WAIT;
 
                 System.out.println("Trying to writeback to memory at address " + (tag+i));
@@ -172,7 +165,7 @@ public class Cache extends Memory {
             //Checking the dirty bits and writing back to New Memory if the bit is true
             for(int i = 0; i < 4; i++){
                 if(dirty[tagLoc][i]){
-                    int temp = super.readCache("",tagLoc+i);
+                    int temp = super.readCache("",tagLoc,i);
                     int out = Memory.WAIT;
                     System.out.println("Trying to writeback to memory at address " + (tag+i));
                     while (out == Memory.WAIT) {

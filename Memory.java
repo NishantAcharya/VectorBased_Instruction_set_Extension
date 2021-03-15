@@ -101,13 +101,10 @@ public class Memory {
     }
 
     //Method of direct access during write back since the cache line data is known
-    public int readCache(String callingFrom, int address) {
+    public int readCache(String callingFrom, int tag , int offset) {
 
-        address = address % size; // Wrap around if needed
-        int offset = address % lineLength;
-        int lineNum = (address - offset) / lineLength;
 
-        return data[lineNum][offset];
+        return data[tag][offset];
     }
 
     public void printData() {
