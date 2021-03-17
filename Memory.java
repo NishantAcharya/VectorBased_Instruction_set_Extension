@@ -1,3 +1,4 @@
+import java.util.Arrays;
 import java.util.Random;
 
 public class Memory {
@@ -10,16 +11,18 @@ public class Memory {
 
     private String currentlyWaiting = "";
     private int currWait = 0;
-
+// Just a reminder, Numlines for the demo need to be 16 and numline*linelength < 2^32(address) for RAM
     public Memory(int numLines, int lineLength) {
         this.size = numLines * lineLength;
         data = new int[numLines][lineLength];
 
+        /*Memory needs to be set to 0 in each block and the chache needs to be clean*/
         //REMOVE LATER JUST FOR DEMO TO HAVE RANDOM DATA IN DATA
         Random rand = new Random();
         for (int i = 0; i < data.length; i++) {
             for (int j = 0; j < data[i].length; j++) {
-                data[i][j] = rand.nextInt(10);
+                //data[i][j] = rand.nextInt(10);
+                data[i][j] = 0;
             }
         }
     }
@@ -95,5 +98,29 @@ public class Memory {
         data[lineNum] = line;
 
         return 1;
+    }
+
+    //Method of direct access during write back since the cache line data is known
+    public int readCache(String callingFrom, int tag , int offset) {
+
+
+        return data[tag][offset];
+    }
+
+    public void printData() {
+        for (int i = 0; i < data.length; i++) {
+            int[] row = data[i];
+            System.out.println((i * 4) +  ": " + Arrays.toString(row));
+        }
+    }
+
+    public void printData(int fromAddr, int toAddr) {
+        if (fromAddr == -1) fromAddr = 0;
+        if (toAddr == -1) toAddr = data.length * 4;
+
+        for (int i = fromAddr / 4; i < toAddr / 4 + 1; i++) {
+            int[] row = data[i];
+            System.out.println((i * 4) +  ": " + Arrays.toString(row));
+        }
     }
 }
