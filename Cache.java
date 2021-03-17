@@ -36,7 +36,7 @@ public class Cache extends Memory {
         }
 
         for (int i = 0; i < numLines; i++) {
-            tags[i] = -1;
+            tags[i] = 0;
             valid[i] = false;
             dirty[i] = false;
 
@@ -57,13 +57,13 @@ public class Cache extends Memory {
         if(address < (nextMemory.getSize()/4)){
             set = 0;
         }
-        if((address < (nextMemory.getSize()/2)) && (address >= (nextMemory.getSize()/4))){
+        else if((address < (nextMemory.getSize()/2)) && (address >= (nextMemory.getSize()/4))){
             set = 1;
         }
-        if((address < ((nextMemory.getSize()*3)/4)) && (address >= (nextMemory.getSize()/2))){
+        else if((address < ((nextMemory.getSize()*3)/4)) && (address >= (nextMemory.getSize()/2))){
             set = 2;
         }
-        if((address < nextMemory.getSize()) && (address >= (nextMemory.getSize()*3)/4)){
+        else if((address < nextMemory.getSize()) && (address >= (nextMemory.getSize()*3)/4)){
             set = 3;
         }
         // Check if tag is in cache
@@ -92,8 +92,8 @@ public class Cache extends Memory {
 
             if (lru[set][tagLoc%4] != 0) {
                 for (int i = 0; i < lru[set].length; i++) { // Update LRU (0 for nextLoc, +1 for everything else)
-                    lru[set][i] = (tagLoc%4 == i) ? 0 : ((tags[i+ (set*4)] == -1) ? -1 : lru[set][i] + 1);
-                    lineData.get(i).setLru(lru[set][i]);
+                    lru[set][i] = (tagLoc%4 == i) ? 0 : ((tags[i+ (set*4)] == 0 && !valid[i+(set*4)]) ? -1 : lru[set][i] + 1);
+                    lineData.get(i+(set*4)).setLru(lru[set][i]);
                 }
             }
 
@@ -119,19 +119,19 @@ public class Cache extends Memory {
         if(address < (nextMemory.getSize()/4)){
             set = 0;
         }
-        if((address < (nextMemory.getSize()/2)) && (address >= (nextMemory.getSize()/4))){
+        else if((address < (nextMemory.getSize()/2)) && (address >= (nextMemory.getSize()/4))){
             set = 1;
         }
-        if((address < ((nextMemory.getSize()*3)/4)) && (address >= (nextMemory.getSize()/2))){
+        else if((address < ((nextMemory.getSize()*3)/4)) && (address >= (nextMemory.getSize()/2))){
             set = 2;
         }
-        if((address < nextMemory.getSize()) && (address >= (nextMemory.getSize()*3)/4)){
+        else if((address < nextMemory.getSize()) && (address >= (nextMemory.getSize()*3)/4)){
             set = 3;
         }
 
         // Look for empty spot and find least recently used full spot
         for (int i = set*4; i < (set*4)+lru[set].length; i++)
-            if (tags[i] == -1) {
+            if (tags[i] == 0 && valid[i] == false) {
                 nextLoc = i;
                 break;
             } else if (lru[set][i%4] > lru[set][maxLRULoc%4])
@@ -165,8 +165,8 @@ public class Cache extends Memory {
         lineData.get(nextLoc).setDirty(isDirty ? 1 : 0);
 
         for (int i = 0; i < lru[set].length; i++) { // Update LRU (0 for nextLoc, +1 for everything else)
-            lru[set][i] = (nextLoc%4 == i) ? 0 : ((tags[i+ (set*4)] == -1) ? -1 : lru[set][i] + 1);
-            lineData.get(i).setLru(lru[set][i]);
+            lru[set][i] = (nextLoc%4 == i) ? 0 : ((tags[i+ (set*4)] == 0 && !valid[i+(set*4)]) ? -1 : lru[set][i] + 1);
+            lineData.get(i+(set*4)).setLru(lru[set][i]);
         }
 
     }
@@ -180,13 +180,13 @@ public class Cache extends Memory {
         if(address < (nextMemory.getSize()/4)){
             set = 0;
         }
-        if((address < (nextMemory.getSize()/2)) && (address >= (nextMemory.getSize()/4))){
+        else if((address < (nextMemory.getSize()/2)) && (address >= (nextMemory.getSize()/4))){
             set = 1;
         }
-        if((address < ((nextMemory.getSize()*3)/4)) && (address >= (nextMemory.getSize()/2))){
+        else if((address < ((nextMemory.getSize()*3)/4)) && (address >= (nextMemory.getSize()/2))){
             set = 2;
         }
-        if((address < nextMemory.getSize()) && (address >= (nextMemory.getSize()*3)/4)){
+        else if((address < nextMemory.getSize()) && (address >= (nextMemory.getSize()*3)/4)){
             set = 3;
         }
 
@@ -210,7 +210,7 @@ public class Cache extends Memory {
                     lru[set][i] += 1;
                 }
 
-                lineData.get(i).setLru(lru[set][i]);
+                lineData.get(i+(set*4)).setLru(lru[set][i]);
             }
 
             //Checking the dirty bits and writing back to Next Memory if the bit is true
