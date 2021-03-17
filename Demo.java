@@ -1,6 +1,4 @@
-//Add an interactive demo
-//Demo: Empty cache(filled with invalid), Empty memory(filled with 0s), do initial read's from cache, do a write to memory
-//Try to replace the one element and show the change iin memory
+//Cache num of lines should be multiples of 4
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -76,7 +74,6 @@ public class Demo extends Application {
         stage.show();
 
         demoInstructions();
-        System.out.println(RAM.readCache("",1000));
 
     }
 
@@ -90,22 +87,12 @@ public class Demo extends Application {
 
         cache.directWrite(1000, new int[]{1,14,12,13},1000,"Main", true);
         cache.directWrite(1000, new int[]{2,22,12,100},1000,"Main", true);
+        cache.directWrite(8000, new int[]{2,22,12,100},8000,"Main", true);
+        cache.directWrite(16000, new int[]{2,22,12,100},16000,"Main", true);
+        cache.directWrite(24000, new int[]{2,22,12,100},24000,"Main", true);
 
         RAM.printData(1000,1064);
 
-//        new Timer().schedule(new TimerTask() {
-//            @Override
-//            public void run() {
-//                Platform.runLater(() -> {
-//                    instructionLabel.setText("Instruction:  READ " + address);
-//                    int out = testRead(address);
-//                    instructionLabel.setText("Instruction:  READ " + address + ", Output: " + out);
-//
-//                    address += Math.random() * 4;
-//                    demoInstructions();
-//                });
-//            }
-//        }, 2000);
     }
 
     public int testRead(int address) {

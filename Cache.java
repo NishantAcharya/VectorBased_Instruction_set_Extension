@@ -10,26 +10,33 @@ public class Cache extends Memory {
     private Memory nextMemory;
 
     private int[] tags;
-    private int[] lru;
+    private int[][] lru;
     private boolean[] dirty;
     private boolean[] valid;
     public ObservableList<LineData> lineData;
-
+//Cache lines need to be multiples of 4
     public Cache(int numLines, Memory nextMemory) {
         super(numLines, 4, 0);//Line length might change in the future
         this.nextMemory = nextMemory;
 
         tags = new int[numLines];
-        lru = new int[numLines];
+        lru = new int[4][numLines/4];
         dirty = new boolean[numLines];//dirty bit per line
         valid = new boolean[numLines];//line based valid bit is acceptable because the whole line is pushed out or pushed in the cache at the same time
 
 
         ArrayList<LineData> lineArrayList = new ArrayList<>();
 
+
+
+        for(int i = 0; i < 4;i++){
+            for(int j = 0; j < lru[i].length; j++){
+                lru[i][j] = -1;
+            }
+        }
+
         for (int i = 0; i < numLines; i++) {
             tags[i] = -1;
-            lru[i] = -1;
             valid[i] = false;
             dirty[i] = false;
 
@@ -44,9 +51,23 @@ public class Cache extends Memory {
         int offset = address % 4;
         int tag = address - offset;//getting start of the line
         int tagLoc = -1;
+        int set = -1;
 
+        //Finding the set of the address
+        if(address < (nextMemory.getSize()/4)){
+            set = 0;
+        }
+        if((address < (nextMemory.getSize()/2)) && (address >= (nextMemory.getSize()/4))){
+            set = 1;
+        }
+        if((address < ((nextMemory.getSize()*3)/4)) && (address >= (nextMemory.getSize()/2))){
+            set = 2;
+        }
+        if((address < nextMemory.getSize()) && (address >= (nextMemory.getSize()*3)/4)){
+            set = 3;
+        }
         // Check if tag is in cache
-        for (int i = 0; i < tags.length; i++) {
+        for (int i = set*4; i < (set*4)+lru[set].length; i++) {
             if (tags[i] == tag) {
                 tagLoc = i;
                 break;
@@ -57,14 +78,22 @@ public class Cache extends Memory {
         if (tagLoc >= 0) { // Cache hit
             // Read word from cache in location of tag
 
-            if (!valid[tagLoc]){
-                return 404; //Return 404 if the reading an invalid bit
+            if (!valid[(tagLoc)]){
+                //If valid bit is set to invlaid and tag exsists then treat it as a miss
+                System.out.println("Invalid Bit encountered\n");
+                int[] line = nextMemory.getLine(callingFrom, address);
+
+                if (line[0] == Memory.WAIT)
+                    return Memory.WAIT;
+                // address added for writeback in case of dirty bit found on 1
+                writeToCache(tag, line, address, callingFrom, false);
+                return line[offset];
             }
 
-            if (lru[tagLoc] != 0) {
-                for (int i = 0; i < lru.length; i++) { // Update LRU (0 for nextLoc, +1 for everything else)
-                    lru[i] = (tagLoc == i) ? 0 : ((tags[i] == -1) ? -1 : lru[i] + 1);
-                    lineData.get(i).setLru(lru[i]);
+            if (lru[set][tagLoc%4] != 0) {
+                for (int i = 0; i < lru[set].length; i++) { // Update LRU (0 for nextLoc, +1 for everything else)
+                    lru[set][i] = (tagLoc%4 == i) ? 0 : ((tags[i+ (set*4)] == -1) ? -1 : lru[set][i] + 1);
+                    lineData.get(i).setLru(lru[set][i]);
                 }
             }
 
@@ -84,13 +113,28 @@ public class Cache extends Memory {
     public void writeToCache(int tag, int[] line, int address, String callingFrom, boolean isDirty) {
         int nextLoc = -1;
         int maxLRULoc = 0;
+        int set = -1;
+
+        //Finding the set of the address
+        if(address < (nextMemory.getSize()/4)){
+            set = 0;
+        }
+        if((address < (nextMemory.getSize()/2)) && (address >= (nextMemory.getSize()/4))){
+            set = 1;
+        }
+        if((address < ((nextMemory.getSize()*3)/4)) && (address >= (nextMemory.getSize()/2))){
+            set = 2;
+        }
+        if((address < nextMemory.getSize()) && (address >= (nextMemory.getSize()*3)/4)){
+            set = 3;
+        }
 
         // Look for empty spot and find least recently used full spot
-        for (int i = 0; i < tags.length; i++)
+        for (int i = set*4; i < (set*4)+lru[set].length; i++)
             if (tags[i] == -1) {
                 nextLoc = i;
                 break;
-            } else if (lru[i] > lru[maxLRULoc])
+            } else if (lru[set][i%4] > lru[set][maxLRULoc%4])
                 maxLRULoc = i;
 
         if (nextLoc == -1) // Cache is full, take LRU
@@ -120,9 +164,9 @@ public class Cache extends Memory {
         dirty[nextLoc] = isDirty;
         lineData.get(nextLoc).setDirty(isDirty ? 1 : 0);
 
-        for (int i = 0; i < lru.length; i++) { // Update LRU (0 for nextLoc, +1 for everything else)
-            lru[i] = (nextLoc == i) ? 0 : ((tags[i] == -1) ? -1 : lru[i] + 1);
-            lineData.get(i).setLru(lru[i]);
+        for (int i = 0; i < lru[set].length; i++) { // Update LRU (0 for nextLoc, +1 for everything else)
+            lru[set][i] = (nextLoc%4 == i) ? 0 : ((tags[i+ (set*4)] == -1) ? -1 : lru[set][i] + 1);
+            lineData.get(i).setLru(lru[set][i]);
         }
 
     }
@@ -130,9 +174,24 @@ public class Cache extends Memory {
     //Direct Write to cache
     public void directWrite(int tag, int[] line, int address, String callingFrom, boolean isDirty){
         int tagLoc = -1;
+        int set = -1;
+
+        //Finding the set of the address
+        if(address < (nextMemory.getSize()/4)){
+            set = 0;
+        }
+        if((address < (nextMemory.getSize()/2)) && (address >= (nextMemory.getSize()/4))){
+            set = 1;
+        }
+        if((address < ((nextMemory.getSize()*3)/4)) && (address >= (nextMemory.getSize()/2))){
+            set = 2;
+        }
+        if((address < nextMemory.getSize()) && (address >= (nextMemory.getSize()*3)/4)){
+            set = 3;
+        }
 
         // Check if tag is in cache
-        for (int i = 0; i < tags.length; i++) {
+        for (int i = set*4; i < (set*4)+lru[set].length; i++) {
             if (tags[i] == tag) {
                 tagLoc = i;
                 break;
@@ -143,15 +202,15 @@ public class Cache extends Memory {
             lineData.set(tagLoc, new LineData(0, tag, line[0], line[1], line[2], line[3]));
 
             // Update LRU (0 for tagLoc, +1 for everything else smaller than tagLoc(original val))
-            int prevLocVal = lru[tagLoc];
-            for (int i = 0; i < lru.length; i++) {
-                if(i == tagLoc){
-                    lru[i] = 0;
-                } else if(lru[i] < prevLocVal){
-                    lru[i] += 1;
+            int prevLocVal = lru[set][tagLoc%4];
+            for (int i = 0; i < lru[set].length; i++) {
+                if(i == tagLoc%lru[set].length){
+                    lru[set][i] = 0;
+                } else if(lru[set][i] < prevLocVal){
+                    lru[set][i] += 1;
                 }
 
-                lineData.get(i).setLru(lru[i]);
+                lineData.get(i).setLru(lru[set][i]);
             }
 
             //Checking the dirty bits and writing back to Next Memory if the bit is true

@@ -122,4 +122,8 @@ public class Memory {
             System.out.println((i * 4) +  ": " + Arrays.toString(row));
         }
     }
+
+    public int getSize(){
+        return size;
+    }
 }
