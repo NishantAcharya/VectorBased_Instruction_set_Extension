@@ -2,6 +2,7 @@
 //Demo: Empty cache(filled with invalid), Empty memory(filled with 0s), do initial read's from cache, do a write to memory
 //Try to replace the one element and show the change iin memory
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -22,8 +23,10 @@ import java.util.TimerTask;
 public class Demo extends Application {
 
     private TableView table = new TableView();
+
     private Memory RAM;
     private Cache cache;
+    private Label instructionLabel;
 
     public static void main(String[] args) {
         launch(args);
@@ -36,12 +39,8 @@ public class Demo extends Application {
 
         Scene scene = new Scene(new Group());
         stage.setTitle("Cache Demo");
-        stage.setWidth(500);
-        stage.setHeight(500);
 
-//        final Label label = new Label("Cache");
-//        label.setFont(new Font("Arial", 20));
-
+        instructionLabel = new Label("Instruction: ");
         table.setSelectionModel(null);
 
         TableColumn lruCol = new TableColumn("LRU");
@@ -69,12 +68,13 @@ public class Demo extends Application {
 
         table.getColumns().addAll(lruCol, tagCol, validCol, w1Col, w2Col, w3Col, w4Col, d1Col, d2Col, d3Col, d4Col);
         table.setItems(cache.lineData);
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
 
         final VBox vbox = new VBox();
         vbox.setSpacing(5);
-        vbox.setPadding(new Insets(10, 0, 0, 10));
-        vbox.getChildren().addAll(table);
+        vbox.setPadding(new Insets(10, 10, 10, 10));
+        vbox.getChildren().addAll(instructionLabel, table);
 
         ((Group) scene.getRoot()).getChildren().addAll(vbox);
 
@@ -98,9 +98,23 @@ public class Demo extends Application {
         cache.directWrite(1000 - 1000%4, new int[]{2,22,12,100},1000,"Main",new boolean[]{false,false,false,false});
 
         RAM.printData(1000,1064);
+
+//        new Timer().schedule(new TimerTask() {
+//            @Override
+//            public void run() {
+//                Platform.runLater(() -> {
+//                    instructionLabel.setText("Instruction:  READ " + address);
+//                    int out = testRead(address);
+//                    instructionLabel.setText("Instruction:  READ " + address + ", Output: " + out);
+//
+//                    address += Math.random() * 4;
+//                    demoInstructions();
+//                });
+//            }
+//        }, 2000);
     }
 
-    public void testRead(int address) {
+    public int testRead(int address) {
         System.out.println("Trying to read value at " + address + " from cache");
         int out = Memory.WAIT;
 
@@ -108,5 +122,7 @@ public class Demo extends Application {
             out = cache.read("Main", address);
             System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
         }
+
+        return out;
     }
 }
