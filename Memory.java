@@ -90,7 +90,6 @@ public class Memory {
         return 1;
     }
 
-    // Just for cache
     public int writeLine(String callingFrom, int lineNum, int[] line) {
         if (needsToWait(callingFrom, lineNum))
             return Memory.WAIT;

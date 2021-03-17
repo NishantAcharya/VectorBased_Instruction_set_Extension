@@ -47,26 +47,20 @@ public class Demo extends Application {
         lruCol.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("lru"));
         TableColumn tagCol = new TableColumn("TAG");
         tagCol.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("tag"));
+        TableColumn dirtyCol = new TableColumn("D");
+        dirtyCol.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("dirty"));
         TableColumn validCol = new TableColumn("V");
         validCol.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("v"));
         TableColumn w1Col = new TableColumn("Word 1");
         w1Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("word1"));
-        TableColumn d1Col = new TableColumn("D1");
-        d1Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("d1"));
         TableColumn w2Col = new TableColumn("Word 2");
         w2Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("word2"));
-        TableColumn d2Col = new TableColumn("D2");
-        d2Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("d2"));
         TableColumn w3Col = new TableColumn("Word 3");
         w3Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("word3"));
-        TableColumn d3Col = new TableColumn("D3");
-        d3Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("d3"));
         TableColumn w4Col = new TableColumn("Word 4");
         w4Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("word4"));
-        TableColumn d4Col = new TableColumn("D4");
-        d4Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("d4"));
 
-        table.getColumns().addAll(lruCol, tagCol, validCol, w1Col, w2Col, w3Col, w4Col, d1Col, d2Col, d3Col, d4Col);
+        table.getColumns().addAll(lruCol, tagCol, dirtyCol, validCol, w1Col, w2Col, w3Col, w4Col);
         table.setItems(cache.lineData);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
@@ -94,8 +88,8 @@ public class Demo extends Application {
             address += 4;
         }
 
-        cache.directWrite(1000 - 1000%4, new int[]{1,14,12,13},1000,"Main",new boolean[]{true,true,false,true});
-        cache.directWrite(1000 - 1000%4, new int[]{2,22,12,100},1000,"Main",new boolean[]{false,false,false,false});
+        cache.directWrite(1000, new int[]{1,14,12,13},1000,"Main", true);
+        cache.directWrite(1000, new int[]{2,22,12,100},1000,"Main", true);
 
         RAM.printData(1000,1064);
 
