@@ -155,14 +155,14 @@ public class Cache extends Memory {
         int set = address / (nextMemory.getSize() / 4);
 
         // Check if tag is in cache
-        for (int i = set*4; i < (set*4)+lru[set].length; i++) {
+        for (int i = set * 4; i < (set * 4) + lru[set].length; i++) {
             if (tags[i] == tag) {
                 tagLoc = i;
                 break;
             }
         }
 
-        if(tagLoc >= 0) {
+        if (tagLoc >= 0) {
             lineData.set(tagLoc, new LineData(0, tag, line[0], line[1], line[2], line[3]));
 
             // Update LRU (0 for tagLoc, +1 for everything else smaller than tagLoc(original val))

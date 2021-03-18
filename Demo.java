@@ -14,6 +14,11 @@ import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -21,10 +26,12 @@ import java.util.TimerTask;
 public class Demo extends Application {
 
     private TableView table = new TableView();
+    private Label instructionLabel;
 
     private Memory RAM;
     private Cache cache;
-    private Label instructionLabel;
+    private Registers registers;
+    private Pipeline pipeline;
 
     public static void main(String[] args) {
         launch(args);
@@ -32,11 +39,11 @@ public class Demo extends Application {
 
     @Override
     public void start(Stage stage) {
-        RAM = new Memory(8000, 4);
-        cache = new Cache(16, RAM);
-
         Scene scene = new Scene(new Group());
         stage.setTitle("Cache Demo");
+
+        // Sets up memory and pipeline
+        setup();
 
         instructionLabel = new Label("Instruction: ");
         table.setSelectionModel(null);
@@ -62,7 +69,6 @@ public class Demo extends Application {
         table.setItems(cache.lineData);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-
         final VBox vbox = new VBox();
         vbox.setSpacing(5);
         vbox.setPadding(new Insets(10, 10, 10, 10));
@@ -73,8 +79,26 @@ public class Demo extends Application {
         stage.setScene(scene);
         stage.show();
 
-        demoInstructions();
+        runInstructions();
 
+//        demoInstructions();
+    }
+
+    public void setup() {
+        RAM = new Memory(8000, 4);
+        cache = new Cache(16, RAM);
+        registers = new Registers(16);
+        pipeline = new Pipeline();
+    }
+
+    public void runInstructions() {
+        ArrayList<Instruction> instructions;
+
+        try {
+            instructions = loadInstructions("demo1.txt");
+        } catch (IOException e) { return; }
+
+        pipeline.run(instructions);
     }
 
     public void demoInstructions() {
@@ -111,7 +135,6 @@ public class Demo extends Application {
         cache.directWrite(24000, new int[]{2,22,12,100},24000,"Main", true);
 
         RAM.printData(1000,1064);
-
     }
 
     public int testRead(int address) {
@@ -124,5 +147,17 @@ public class Demo extends Application {
         }
 
         return out;
+    }
+
+    public ArrayList<Instruction> loadInstructions(String fileName) throws IOException {
+        ArrayList<Instruction> instructions = new ArrayList<>();
+
+        try(BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            for(String line; (line = br.readLine()) != null; ) {
+                instructions.add(new Instruction(line));
+            }
+        }
+
+        return instructions;
     }
 }
