@@ -80,8 +80,10 @@ public class Demo extends Application {
     int address = 1000;
     public void demoInstructions() {
 
+        //testRead(0);
+
         // Warming up the cache
-        for(int i = 0; i < 16; i++){
+        /*for(int i = 0; i < 16; i++){
             testRead(address);
             address += 4;
         }
@@ -90,7 +92,7 @@ public class Demo extends Application {
         for(int i = 0; i < 16; i++){
             testRead(address);
             address += 4;
-        }
+        }*/
 
         address = 16000;
         for(int i = 0; i < 16; i++){
@@ -98,17 +100,17 @@ public class Demo extends Application {
             address += 4;
         }
 
-        address = 24000;
+     /*   address = 24000;
         for(int i = 0; i < 16; i++){
             testRead(address);
             address += 4;
-        }
+        }*/
 
 
 
-        cache.directWrite(1000, new int[]{1,14,12,13},1000,"Main", true);
-        cache.directWrite(1000, new int[]{2,22,12,100},1000,"Main", true);
-        cache.directWrite(1060, new int[]{2,22,12,100},1060,"Main", true);
+        //cache.directWrite(1000, new int[]{1,14,12,13},1000,"Main", true);
+        //cache.directWrite(1000, new int[]{2,22,12,100},1000,"Main", true);
+        //cache.directWrite(1060, new int[]{2,22,12,100},1060,"Main", true);
         cache.directWrite(8000, new int[]{2,22,12,100},8000,"Main", true);
         cache.directWrite(16000, new int[]{2,22,12,100},16000,"Main", true);
         cache.directWrite(24000, new int[]{2,22,12,100},24000,"Main", true);

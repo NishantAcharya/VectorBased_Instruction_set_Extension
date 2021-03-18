@@ -112,8 +112,9 @@ public class Cache extends Memory {
 
     public void writeToCache(int tag, int[] line, int address, String callingFrom, boolean isDirty) {
         int nextLoc = -1;
-        int maxLRULoc = 0;
+
         int set = -1;
+
 
         //Finding the set of the address
         if(address < (nextMemory.getSize()/4)){
@@ -128,6 +129,9 @@ public class Cache extends Memory {
         else if((address < nextMemory.getSize()) && (address >= (nextMemory.getSize()*3)/4)){
             set = 3;
         }
+        //Setting maxLRULoc to the start of the set
+        int maxLRULoc = set*4;
+
 
         // Look for empty spot and find least recently used full spot
         for (int i = set*4; i < (set*4)+lru[set].length; i++)
@@ -136,6 +140,7 @@ public class Cache extends Memory {
                 break;
             } else if (lru[set][i%4] > lru[set][maxLRULoc%4])
                 maxLRULoc = i;
+
 
         if (nextLoc == -1) // Cache is full, take LRU
             nextLoc = maxLRULoc;
