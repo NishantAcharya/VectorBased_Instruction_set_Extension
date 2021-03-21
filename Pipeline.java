@@ -7,9 +7,11 @@ public class Pipeline implements NotifyAvailable {
     private final ArrayList<Instruction> toRun; // Instructions that haven't been through any stage yet
     private final Stage[] stages;
     private boolean firstStageAvailable = true;
+    private Cache memAccess;//Access to the cache and memory operations
 
-    public Pipeline() {
+    public Pipeline(Cache mem) {
         toRun = new ArrayList<>();
+        this.memAccess = mem;
 
         // Replace this with actual stage classes once built
         Stage stage5 = new Stage("Stage 5", null);
@@ -26,6 +28,7 @@ public class Pipeline implements NotifyAvailable {
         stage1.setToNotify(this);
 
         stages = new Stage[] { stage1, stage2, stage3, stage4, stage5 };
+
     }
 
     public void run(ArrayList<Instruction> instructions) {
@@ -51,6 +54,8 @@ public class Pipeline implements NotifyAvailable {
     }
 
     // Each stage extends this class
+    //Use the next stage to figure out which stage you are in
+    //Since there are only 5 stages and they are known, make 5 conditions for run and sepraste the different stages
     private class Stage implements NotifyAvailable {
         protected Instruction instruction;
         protected Stage nextStage;

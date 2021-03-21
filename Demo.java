@@ -88,7 +88,7 @@ public class Demo extends Application {
         RAM = new Memory(8000, 4);
         cache = new Cache(16, RAM);
         registers = new Registers(16);
-        pipeline = new Pipeline();
+        pipeline = new Pipeline(cache);
     }
 
     public void runInstructions() {
