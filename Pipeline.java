@@ -14,11 +14,11 @@ public class Pipeline implements NotifyAvailable {
         this.memAccess = mem;
 
         // Replace this with actual stage classes once built
-        Stage stage5 = new Stage("Stage 5", null);
-        Stage stage4 = new Stage("Stage 4", stage5);
-        Stage stage3 = new Stage("Stage 3", stage4);
-        Stage stage2 = new Stage("Stage 2", stage3);
-        Stage stage1 = new Stage("Stage 1", stage2);
+        Stage stage5 = new Stage("Write Back", null);
+        Stage stage4 = new Stage("Memory Access", stage5);
+        Stage stage3 = new Stage("Execute", stage4);
+        Stage stage2 = new Stage("Decode", stage3);
+        Stage stage1 = new Stage("Fetch", stage2);
 
         // Allows stage to notify previous stage when it is available
         stage5.setToNotify(stage4);
@@ -78,10 +78,24 @@ public class Pipeline implements NotifyAvailable {
         }
 
         public void run(Instruction i) {
-            this.instruction = i;
             this.finishedRun = false;
             System.out.println("Running at " + name + ": " + i);
+            //Checking which version of run to go with
+            if(name.equals("Fetch")){
+                int memDelay = 3;
+                //Simulating wait for accessing instruction stored in memory
+                while(memDelay > 0){
+                    System.out.println("Waiting on Memory Access");
+                }
 
+                this.instruction = i;
+            }
+            else if(name.equals("Decode")){
+
+            }
+            else if(name.equals("Execute")){}
+            else if(name.equals("Memory Access")){}
+            else if(name.equals("Write Back")){}
             // Simulate stage taking time
             new Timer().schedule(new TimerTask() {
                 @Override
