@@ -55,7 +55,12 @@ public class Pipeline implements NotifyAvailable {
 
     // Each stage extends this class
     //Use the next stage to figure out which stage you are in
-    //Since there are only 5 stages and they are known, make 5 conditions for run and sepraste the different stages
+    //Since there are only 5 stages and they are known, make 5 conditions for run and seperate the different stages
+    //fetch - instruction gets assigned to variable,add wait to simulate fetch
+    //decode - decode instruction and figure out the instruction
+    //Execute - do the operation
+    //Access - Check the memory location for writeback
+    //Writeback - Write
     private class Stage implements NotifyAvailable {
         protected Instruction instruction;
         protected Stage nextStage;

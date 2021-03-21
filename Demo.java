@@ -80,7 +80,7 @@ public class Demo extends Application {
         stage.show();
 
        // runInstructions();
-        //demoInstructions();
+        demoInstructions();
     }
 
     public void setup() {
@@ -106,25 +106,25 @@ public class Demo extends Application {
 
         // Warming up the cache
         int address = 1000;
-        for(int i = 0; i < 16; i++){
+        for(int i = 0; i < 4; i++){
             testRead(address);
             address += 4;
         }
 
         address = 8000;
-        for(int i = 0; i < 16; i++){
+        for(int i = 0; i < 1; i++){
             testRead(address);
             address += 4;
         }
 
         address = 16000;
-        for(int i = 0; i < 16; i++){
+        for(int i = 0; i < 3; i++){
             testRead(address);
             address += 4;
         }
 
         address = 24000;
-        for(int i = 0; i < 16; i++){
+        for(int i = 0; i < 8; i++){
             testRead(address);
             address += 4;
         }
