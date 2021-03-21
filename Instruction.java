@@ -13,6 +13,7 @@ public class Instruction {
         this.params = Arrays.copyOfRange(values, 1, values.length);
     }
 
+
     public enum Type {
         ADD, LOAD, STORE;
     }

@@ -79,9 +79,8 @@ public class Demo extends Application {
         stage.setScene(scene);
         stage.show();
 
-        runInstructions();
-
-//        demoInstructions();
+       // runInstructions();
+        //demoInstructions();
     }
 
     public void setup() {
@@ -103,7 +102,7 @@ public class Demo extends Application {
 
     public void demoInstructions() {
 
-        //testRead(0);
+        testRead(0);
 
         // Warming up the cache
         int address = 1000;

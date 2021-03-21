@@ -50,7 +50,7 @@ public class Cache extends Memory {
         int tagLoc = -1;
 
         //Finding the set of the address
-        int set = address / (nextMemory.getSize() / 4);
+        int set = (address / 16)%4; //Setting set to cycle of 16 words
 
         // Check if tag is in cache
         for (int i = set * 4; i < (set * 4) + lru[set].length; i++) {
@@ -99,7 +99,7 @@ public class Cache extends Memory {
         int nextLoc = -1;
 
         //Finding the set of the address
-        int set = address / (nextMemory.getSize() / 4);
+        int set = (address / 16)%4; //Setting set to cycle of 16 words
 
         //Setting maxLRULoc to the start of the set
         int maxLRULoc = set*4;
@@ -152,7 +152,7 @@ public class Cache extends Memory {
         int tagLoc = -1;
 
         //Finding the set of the address
-        int set = address / (nextMemory.getSize() / 4);
+        int set = (address / 16)%4; //Setting set to cycle of 16 words
 
         // Check if tag is in cache
         for (int i = set * 4; i < (set * 4) + lru[set].length; i++) {
