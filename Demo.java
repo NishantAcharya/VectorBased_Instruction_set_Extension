@@ -79,8 +79,8 @@ public class Demo extends Application {
         stage.setScene(scene);
         stage.show();
 
-       // runInstructions();
-        demoInstructions();
+       runInstructions();
+        //demoInstructions();
     }
 
     public void setup() {

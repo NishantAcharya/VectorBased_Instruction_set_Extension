@@ -8,18 +8,28 @@ public class Instruction {
     private String strValue;
     private int type;
     private int opCode;
-    private int[] params;
+    private ArrayList<Integer> params;
     private ArrayList<String> stagesDone;
+    private int offset; //for branching, the number of lines to skip on branching
 
     public Instruction(String str) {
         this.strValue = str;
-        //The following code will be done in the decode stage
-        /*
-        String[] values = str.split(" ");
-        this.type = Type.valueOf(values[0]);
-        this.params = Arrays.copyOfRange(values, 1, values.length);
-        */
+        this.stagesDone = new ArrayList<>();
+        this.params = new ArrayList<>();
 
+
+    }
+
+    public int getOffset(){
+        return this.offset;
+    }
+
+    public void setOffset(int offset){
+        this.offset = offset;
+    }
+
+    public String getStrValue(){
+        return this.strValue;
     }
 
     public void addStage(String pipStg){
@@ -34,8 +44,12 @@ public class Instruction {
         this.opCode = opCode;
     }
 
-    public void setParams(int[] params){
+    public void setParams(ArrayList<Integer> params){
         this.params = params;
+    }
+
+    public ArrayList<Integer> getParams(){
+        return this.params;
     }
 
     public String getLastStage(){
@@ -48,11 +62,6 @@ public class Instruction {
 
     public int getOpCode(){
         return this.opCode;
-    }
-
-
-    public enum Type {
-        ADD, LOAD, STORE;
     }
 
     @Override

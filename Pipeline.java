@@ -8,10 +8,13 @@ public class Pipeline implements NotifyAvailable {
     private final Stage[] stages;
     private boolean firstStageAvailable = true;
     private Cache memAccess;//Access to the cache and memory operations
+    ArrayList<Instruction> instructionList;
+    private Registers registers;
 
     public Pipeline(Cache mem) {
         toRun = new ArrayList<>();
         this.memAccess = mem;
+        registers = new Registers(16);
 
         // Replace this with actual stage classes once built
         Stage stage5 = new Stage("Write Back", null);
@@ -32,6 +35,7 @@ public class Pipeline implements NotifyAvailable {
     }
 
     public void run(ArrayList<Instruction> instructions) {
+        this.instructionList = instructions;
         toRun.addAll(instructions);
 
         if (firstStageAvailable) {
@@ -59,8 +63,8 @@ public class Pipeline implements NotifyAvailable {
     //fetch - instruction gets assigned to variable,add wait to simulate fetch
     //decode - decode instruction and figure out the instruction
     //Execute - do the operation
-    //Access - Check the memory location for writeback
-    //Writeback - Write
+    //Access - Check for any memory access,Load,store and branch completion
+    //Writeback - Write to destination registers
     private class Stage implements NotifyAvailable {
         protected Instruction instruction;
         protected Stage nextStage;
@@ -86,16 +90,217 @@ public class Pipeline implements NotifyAvailable {
                 //Simulating wait for accessing instruction stored in memory
                 while(memDelay > 0){
                     System.out.println("Waiting on Memory Access");
+                    memDelay--;
                 }
-
+                //"Fetched" The instruction
                 this.instruction = i;
+                instruction.addStage(name);
             }
             else if(name.equals("Decode")){
+                this.instruction = i;
+                int instr = Integer.parseInt(instruction.getStrValue(),2);
+                int type = (instr & 0b00001111000000000000000000000000)>>24;
+                int opCode = (instr & 0b00000000111100000000000000000000) >> 20;
+                instruction.setOpCode(opCode);
+                instruction.setType(type);
+                //Defining parameters, all of them may not be used
+                ArrayList<Integer> params = new ArrayList<>();
+                int r_d=0;
+                int r_1=0;
+                int r_2=0;
+                int offset = 0; //number of program lines in the branch
 
+                switch(type){
+                    case 0:
+                        switch(opCode){
+                            case 0:
+                                r_d = (instr & 0b00000000000001111000000000000000) >> 15;
+                                r_1 = (instr & 0b00000000000000000111100000000000) >> 11;
+                                r_2 = (instr & 0b00000000000000000000011110000000) >> 7;
+                                params.add(r_d);
+                                params.add(r_1);
+                                params.add(r_2);
+                                instruction.setParams(params);
+                                break;
+                        }
+                        break;
+                    case 1:
+                        break;
+                    case 2:
+                        break;
+                    case 3:
+                        break;
+                    case 4:
+                        break;
+                    case 5:
+                        break;
+                    case 6:
+                        switch(opCode){
+
+                            case 13:
+                                r_d = (instr & 0b00000000000001111000000000000000) >> 15;
+                                r_1 = (instr  & 0b00000000000000000111111111111000) >> 3;
+                                params.add(r_d);
+                                params.add(r_1);
+                                instruction.setParams(params);
+
+                                break;
+                            case 14:
+                                r_d = (instr & 0b00000000000001111000000000000000) >> 15;
+                                r_1 = (instr  & 0b00000000000000000111111111111000) >> 3;
+                                params.add(r_d);
+                                params.add(r_1);
+                                instruction.setParams(params);
+                                System.out.println(r_1);
+                                break;
+                        }
+                        break;
+                    case 7:
+                        break;
+                    case 8:
+                        break;
+                    case 9:
+                        break;
+                    case 10:
+                        break;
+                    case 15:
+                        break;
+                }
+                instruction.addStage(name);
             }
-            else if(name.equals("Execute")){}
-            else if(name.equals("Memory Access")){}
-            else if(name.equals("Write Back")){}
+            else if(name.equals("Execute")){
+                this.instruction = i;
+                int type = instruction.getType();
+                int opCode = instruction.getOpCode();
+                ArrayList<Integer>params = instruction.getParams();
+                switch(type){
+                    case 0:
+                        switch(opCode){
+                            case 0:
+                                int r_1 = params.get(1);
+                                int r_2 = params.get(2);
+                                params.add(registers.get(r_1)+ registers.get(r_2));
+                                System.out.println(params.get(3));
+                                break;
+                        }
+                        break;
+                    case 1:
+                        break;
+                    case 2:
+                        break;
+                    case 3:
+                        break;
+                    case 4:
+                        break;
+                    case 5:
+                        break;
+                    case 6:
+                        switch(opCode){
+
+                            case 13:
+                                //Only direct load happen in execute stage, all memory based loads happen in memory stage
+                                registers.set(params.get(0),params.get(1));
+                                break;
+                            case 14:
+                                //Store gets executed in the writeback or memmory access stage
+                                break;
+                        }
+                        break;
+                    case 7:
+                        break;
+                    case 8:
+                        break;
+                    case 9:
+                        break;
+                    case 10:
+                        break;
+                    case 15:
+                        break;
+                }
+                instruction.addStage(name);
+            }
+            else if(name.equals("Memory Access")){
+                this.instruction = i;
+                //Needs to be implemented Bracnh,Load and Store
+                int type = instruction.getType();
+                int opCode = instruction.getOpCode();
+                ArrayList<Integer>params = instruction.getParams();
+                switch(type){
+                    case 5:
+
+                        break;
+                    case 6:
+                        if(opCode == 14){
+                            int address = registers.get(params.get(0));
+                            int offset = address%4;
+                            int tag = address - offset;
+                            int out = Memory.WAIT;
+
+                            //getting line
+                            while (out == Memory.WAIT) {
+                                out = memAccess.read("Pipeline", address);
+                                System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
+                            }
+
+                            int[] line = {memAccess.read(name,tag),memAccess.read(name,tag+1),memAccess.read(name,tag+2),memAccess.read(name,tag+3)};
+                            line[offset] = params.get(1);
+                            System.out.print("Param to store is " + line[offset]);
+                            memAccess.directWrite(tag,line,address,name,true);
+                        }
+                        break;
+                    case 7:
+                        break;
+                }
+                instruction.addStage(name);
+            }
+            else if(name.equals("Write Back")){
+                this.instruction = i;
+                int type = instruction.getType();
+                int opCode = instruction.getOpCode();
+                ArrayList<Integer>params = instruction.getParams();
+                switch(type){
+                    case 0:
+                        switch(opCode){
+                            case 0:
+                                registers.set(params.get(0),params.get(3));
+                                break;
+                        }
+                        break;
+                    case 1:
+                        break;
+                    case 2:
+                        break;
+                    case 3:
+                        break;
+                    case 4:
+                        break;
+                    case 5:
+                        break;
+                    case 6:
+                        switch(opCode){
+
+                            case 13:
+
+                                break;
+                            case 14:
+
+                                break;
+                        }
+                        break;
+                    case 7:
+                        break;
+                    case 8:
+                        break;
+                    case 9:
+                        break;
+                    case 10:
+                        break;
+                    case 15:
+                        break;
+                }
+                instruction.addStage(name);
+            }
+
             // Simulate stage taking time
             new Timer().schedule(new TimerTask() {
                 @Override
