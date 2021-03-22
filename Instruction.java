@@ -3,6 +3,8 @@ import java.util.Arrays;
 
 public class Instruction {
 
+    public static final int END = 0b00001111000000000000000000000000;
+
     private String strValue;
     private int type;
     private int opCode;
@@ -17,7 +19,7 @@ public class Instruction {
     }
 
     public void instructionToBinaryString(int instr) {
-        if (instr == -1) {
+        if (instr == Instruction.END) {
             strValue = "END";
             return;
         }

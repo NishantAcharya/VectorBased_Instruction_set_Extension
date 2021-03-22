@@ -1,6 +1,6 @@
 //Cache num of lines should be multiples of 4
 import javafx.application.Application;
-import javafx.application.Platform;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -8,24 +8,15 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Font;
 import javafx.stage.Stage;
-import javafx.util.StringConverter;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class Demo extends Application {
-
-    private TableView table = new TableView();
     private Label instructionLabel;
 
     private Memory RAM;
@@ -40,13 +31,24 @@ public class Demo extends Application {
     @Override
     public void start(Stage stage) {
         Scene scene = new Scene(new Group());
-        stage.setTitle("Cache Demo");
+        stage.setTitle("Demo");
 
         // Sets up memory and pipeline
         setup();
 
-        instructionLabel = new Label("Instruction: ");
-        table.setSelectionModel(null);
+        TableView registersTable = new TableView();
+        registersTable.setSelectionModel(null);
+
+        TableColumn registerCol = new TableColumn("Register");
+        registerCol.setCellValueFactory(c -> ((TableColumn.CellDataFeatures)c).getValue());
+
+        registersTable.getColumns().add(registerCol);
+        registersTable.setItems(registers.registerData);
+        registersTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        registersTable.setPrefHeight(428);
+
+        TableView cacheTable = new TableView();
+        cacheTable.setSelectionModel(null);
 
         TableColumn lruCol = new TableColumn("LRU");
         lruCol.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("lru"));
@@ -65,16 +67,16 @@ public class Demo extends Application {
         TableColumn w4Col = new TableColumn("Word 4");
         w4Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("word4"));
 
-        table.getColumns().addAll(lruCol, tagCol, dirtyCol, validCol, w1Col, w2Col, w3Col, w4Col);
-        table.setItems(cache.lineData);
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        cacheTable.getColumns().addAll(lruCol, tagCol, dirtyCol, validCol, w1Col, w2Col, w3Col, w4Col);
+        cacheTable.setItems(cache.lineData);
+        cacheTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-        final VBox vbox = new VBox();
-        vbox.setSpacing(5);
-        vbox.setPadding(new Insets(10, 10, 10, 10));
-        vbox.getChildren().addAll(instructionLabel, table);
+        final HBox hBox = new HBox();
+        hBox.setSpacing(5);
+        hBox.setPadding(new Insets(10, 10, 10, 10));
+        hBox.getChildren().addAll(registersTable, cacheTable);
 
-        ((Group) scene.getRoot()).getChildren().addAll(vbox);
+        ((Group) scene.getRoot()).getChildren().addAll(hBox);
 
         stage.setScene(scene);
         stage.show();
@@ -169,7 +171,7 @@ public class Demo extends Application {
         // Write END (-1) after program
         int out = Memory.WAIT;
         while (out == Memory.WAIT) {
-            out = RAM.write("Main", addr, -1);
+            out = RAM.write("Main", addr, Instruction.END);
         }
     }
 }

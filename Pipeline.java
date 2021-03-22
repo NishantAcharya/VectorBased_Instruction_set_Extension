@@ -180,7 +180,7 @@ public class Pipeline implements NotifyAvailable {
                 }
             } else if(name.equals("Write Back")){
                 this.instruction = i;
-                
+
                 int type = instruction.getType();
                 int opCode = instruction.getOpCode();
                 ArrayList<Integer> params = instruction.getParams();
