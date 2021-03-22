@@ -133,13 +133,21 @@ public class Pipeline implements NotifyAvailable {
                     case 4:
                         break;
                     case 5:
-                        break;
+                        switch(opCode){
+                            case 14:
+                                r_d = (instr & 0b00000000000001111000000000000000) >> 15;
+                                r_1 = (instr  & 0b0000000000000000111100000000000) >> 11;
+                                params.add(r_d);
+                                params.add(r_1);
+                                instruction.setParams(params);
+                                break;
+                        }
                     case 6:
                         switch(opCode){
 
                             case 13:
                                 r_d = (instr & 0b00000000000001111000000000000000) >> 15;
-                                r_1 = (instr  & 0b00000000000000000111111111111000) >> 3;
+                                r_1 = (instr  & 0b0000000000000000111111111111000) >> 3;
                                 params.add(r_d);
                                 params.add(r_1);
                                 instruction.setParams(params);
@@ -227,7 +235,23 @@ public class Pipeline implements NotifyAvailable {
                 ArrayList<Integer>params = instruction.getParams();
                 switch(type){
                     case 5:
+                        if(opCode == 14){
+                            int address = registers.get(params.get(0));
+                            int offset = address%4;
+                            int tag = address - offset;
+                            int out = Memory.WAIT;
 
+                            //getting line
+                            while (out == Memory.WAIT) {
+                                out = memAccess.read("Pipeline", address);
+                                System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
+                            }
+
+                            int[] line = {memAccess.read(name,tag),memAccess.read(name,tag+1),memAccess.read(name,tag+2),memAccess.read(name,tag+3)};
+                            line[offset] = registers.get(params.get(1));
+                            System.out.print("Param to store is " + line[offset]);
+                            memAccess.directWrite(tag,line,address,name,true);
+                        }
                         break;
                     case 6:
                         if(opCode == 14){
