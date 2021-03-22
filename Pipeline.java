@@ -180,6 +180,7 @@ public class Pipeline implements NotifyAvailable {
                 }
             } else if(name.equals("Write Back")){
                 this.instruction = i;
+                
                 int type = instruction.getType();
                 int opCode = instruction.getOpCode();
                 ArrayList<Integer> params = instruction.getParams();
@@ -192,16 +193,6 @@ public class Pipeline implements NotifyAvailable {
                                 break;
                         }
                         break;
-                    case 1:
-                        break;
-                    case 2:
-                        break;
-                    case 3:
-                        break;
-                    case 4:
-                        break;
-                    case 5:
-                        break;
                     case 6:
                         switch(opCode){
 
@@ -209,19 +200,10 @@ public class Pipeline implements NotifyAvailable {
 
                                 break;
                             case 14:
-
                                 break;
                         }
                         break;
-                    case 7:
-                        break;
-                    case 8:
-                        break;
-                    case 9:
-                        break;
-                    case 10:
-                        break;
-                    case 15:
+                    default:
                         break;
                 }
             }
