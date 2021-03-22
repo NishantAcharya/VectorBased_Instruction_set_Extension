@@ -7,6 +7,8 @@ public class Registers {
     }
 
     // Can access registers 0 -> 13, 14/15 are special registers
+    // 14 is Linking register
+    // 15 is Program Counter
     public void set(int register, int value) {
         data[register] = value;
     }

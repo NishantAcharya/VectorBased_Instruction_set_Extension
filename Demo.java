@@ -87,17 +87,19 @@ public class Demo extends Application {
         RAM = new Memory(8000, 4);
         cache = new Cache(16, RAM);
         registers = new Registers(16);
-        pipeline = new Pipeline(cache);
+        pipeline = new Pipeline(registers, cache, RAM);
     }
 
     public void runInstructions() {
-        ArrayList<Instruction> instructions;
-
         try {
-            instructions = loadInstructions("demo1.txt");
+            loadInstructions(24000, "demo1.txt");
         } catch (IOException e) { return; }
 
-        pipeline.run(instructions);
+        System.out.println("LOADED PROGRAM INTO MEMORY");
+        RAM.printData(24000, 24004);
+        System.out.println();
+
+        pipeline.run(24000);
     }
 
     public void demoInstructions() {
@@ -148,15 +150,26 @@ public class Demo extends Application {
         return out;
     }
 
-    public ArrayList<Instruction> loadInstructions(String fileName) throws IOException {
-        ArrayList<Instruction> instructions = new ArrayList<>();
+    public void loadInstructions(int programAddress, String fileName) throws IOException {
+        int addr = programAddress;
 
         try(BufferedReader br = new BufferedReader(new FileReader(fileName))) {
             for(String line; (line = br.readLine()) != null; ) {
-                instructions.add(new Instruction(line));
+                int instr = Integer.parseInt(line, 2);
+                int out = Memory.WAIT;
+
+                while (out == Memory.WAIT) {
+                    out = RAM.write("Main", addr, instr);
+                }
+
+                addr += 1;
             }
         }
 
-        return instructions;
+        // Write END (-1) after program
+        int out = Memory.WAIT;
+        while (out == Memory.WAIT) {
+            out = RAM.write("Main", addr, -1);
+        }
     }
 }

@@ -65,7 +65,7 @@ public class Cache extends Memory {
 
             if (!valid[(tagLoc)]){
                 //If valid bit is set to invlaid and tag exsists then treat it as a miss
-                System.out.println("Invalid Bit encountered\n");
+                System.out.println("Invalid Bit encountered");
                 int[] line = nextMemory.getLine(callingFrom, address);
 
                 if (line[0] == Memory.WAIT)

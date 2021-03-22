@@ -1,5 +1,3 @@
-import javafx.stage.Stage;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -12,12 +10,19 @@ public class Instruction {
     private ArrayList<String> stagesDone;
     private int offset; //for branching, the number of lines to skip on branching
 
-    public Instruction(String str) {
-        this.strValue = str;
+    public Instruction() {
+        this.strValue = "NOT YET FETCHED";
         this.stagesDone = new ArrayList<>();
         this.params = new ArrayList<>();
+    }
 
+    public void instructionToBinaryString(int instr) {
+        if (instr == -1) {
+            strValue = "END";
+            return;
+        }
 
+        this.strValue = Long.toBinaryString( Integer.toUnsignedLong(instr) | 0x100000000L).substring(1);
     }
 
     public int getOffset(){
@@ -67,5 +72,66 @@ public class Instruction {
     @Override
     public String toString() {
         return strValue;
+    }
+
+    public void decode() {
+        int instr = Integer.parseInt(strValue,2);
+
+        this.type = (instr & 0b00001111000000000000000000000000) >> 24;
+        this.opCode = (instr & 0b00000000111100000000000000000000) >> 20;
+
+        //Defining parameters, all of them may not be used
+        ArrayList<Integer> params = new ArrayList<>();
+        int r_d=0;
+        int r_1=0;
+        int r_2=0;
+        int offset = 0; //number of program lines in the branch
+
+        switch(type){
+            case 0:
+                switch(opCode){
+                    case 0:
+                        r_d = (instr & 0b00000000000001111000000000000000) >> 15;
+                        r_1 = (instr & 0b00000000000000000111100000000000) >> 11;
+                        r_2 = (instr & 0b00000000000000000000011110000000) >> 7;
+                        params.add(r_d);
+                        params.add(r_1);
+                        params.add(r_2);
+                        setParams(params);
+                        break;
+                }
+                break;
+            case 5:
+                switch(opCode){
+                    case 14:
+                        r_d = (instr & 0b00000000000001111000000000000000) >> 15;
+                        r_1 = (instr  & 0b0000000000000000111100000000000) >> 11;
+                        params.add(r_d);
+                        params.add(r_1);
+                        setParams(params);
+                        break;
+                }
+            case 6:
+                switch(opCode){
+                    case 13:
+                        r_d = (instr & 0b00000000000001111000000000000000) >> 15;
+                        r_1 = (instr  & 0b0000000000000000111111111111000) >> 3;
+                        params.add(r_d);
+                        params.add(r_1);
+                        setParams(params);
+
+                        break;
+                    case 14:
+                        r_d = (instr & 0b00000000000001111000000000000000) >> 15;
+                        r_1 = (instr  & 0b00000000000000000111111111111000) >> 3;
+                        params.add(r_d);
+                        params.add(r_1);
+                        setParams(params);
+                        break;
+                }
+                break;
+            default:
+                break;
+        }
     }
 }
