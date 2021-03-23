@@ -83,14 +83,13 @@ public class Instruction {
         this.opCode = (instr & 0b00000000111100000000000000000000) >> 20;
 
         //Defining parameters, all of them may not be used
-        ArrayList<Integer> params = new ArrayList<>();
         int r_d=0;
         int r_1=0;
         int r_2=0;
         int offset = 0; //number of program lines in the branch
 
         switch(type){
-            case 0:
+            case 0: // Data Processing with 3 operands (rd = r1 + r2)
                 switch(opCode){
                     case 0:
                         r_d = (instr & 0b00000000000001111000000000000000) >> 15;
@@ -99,36 +98,31 @@ public class Instruction {
                         params.add(r_d);
                         params.add(r_1);
                         params.add(r_2);
-                        setParams(params);
                         break;
                 }
                 break;
-            case 5:
+            case 5: // Load/Store
                 switch(opCode){
                     case 14:
                         r_d = (instr & 0b00000000000001111000000000000000) >> 15;
                         r_1 = (instr  & 0b0000000000000000111100000000000) >> 11;
                         params.add(r_d);
                         params.add(r_1);
-                        setParams(params);
                         break;
                 }
-            case 6:
+            case 6: // Load/Store immediate
                 switch(opCode){
                     case 13:
                         r_d = (instr & 0b00000000000001111000000000000000) >> 15;
                         r_1 = (instr  & 0b0000000000000000111111111111000) >> 3;
                         params.add(r_d);
                         params.add(r_1);
-                        setParams(params);
-
                         break;
                     case 14:
                         r_d = (instr & 0b00000000000001111000000000000000) >> 15;
                         r_1 = (instr  & 0b00000000000000000111111111111000) >> 3;
                         params.add(r_d);
                         params.add(r_1);
-                        setParams(params);
                         break;
                 }
                 break;

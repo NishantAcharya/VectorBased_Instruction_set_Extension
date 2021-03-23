@@ -41,11 +41,13 @@ public class Demo extends Application {
 
         TableColumn registerCol = new TableColumn("Register");
         registerCol.setCellValueFactory(c -> ((TableColumn.CellDataFeatures)c).getValue());
+        registerCol.setStyle( "-fx-alignment: CENTER;");
 
         registersTable.getColumns().add(registerCol);
         registersTable.setItems(registers.registerData);
         registersTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         registersTable.setPrefHeight(428);
+        registersTable.setMaxWidth(80);
 
         TableView cacheTable = new TableView();
         cacheTable.setSelectionModel(null);

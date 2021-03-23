@@ -84,127 +84,135 @@ public class Pipeline implements NotifyAvailable {
             System.out.println("Running at " + name + ": " + i);
 
             // Checking which version of run to go with
-            if (name.equals("Fetch")){
-                int out = Memory.WAIT;
-                int PC = registers.get(15);
+            switch (name) {
+                case "Fetch":
+                    int out = Memory.WAIT;
+                    int PC = registers.get(15);
 
-                while (out == Memory.WAIT) {
-                    out = RAM.read(name, PC);
-                }
+                    // Gets instruction in memory from address in PC
+                    while (out == Memory.WAIT) {
+                        out = RAM.read(name, PC);
+                    }
 
-                instruction.instructionToBinaryString(out);
-                instruction.addStage(name);
+                    instruction.instructionToBinaryString(out);
+                    instruction.addStage(name);
 
-                registers.set(15, PC + 1);
-            } else if(name.equals("Decode")){
-                instruction.decode();
-            } else if(name.equals("Execute")){
-                this.instruction = i;
-                int type = instruction.getType();
-                int opCode = instruction.getOpCode();
-                ArrayList<Integer> params = instruction.getParams();
+                    registers.set(15, PC + 1);
+                    break;
+                case "Decode":
+                    instruction.decode();
+                    break;
+                case "Execute": {
+                    this.instruction = i;
+                    int type = instruction.getType();
+                    int opCode = instruction.getOpCode();
+                    ArrayList<Integer> params = instruction.getParams();
 
-                switch (type){
-                    case 0:
-                        switch(opCode){
-                            case 0:
-                                int r_1 = params.get(1);
-                                int r_2 = params.get(2);
-                                params.add(registers.get(r_1)+ registers.get(r_2));
-                                System.out.println(params.get(3));
-                                break;
-                        }
-                        break;
-                    case 6:
-                        switch(opCode){
-
-                            case 13:
-                                //Only direct load happen in execute stage, all memory based loads happen in memory stage
-                                registers.set(params.get(0), params.get(1));
-                                break;
-                            case 14:
-                                //Store gets executed in the write back or memory access stage
-                                break;
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            } else if (name.equals("Memory Access")){
-                this.instruction = i;
-                //Needs to be implemented Bracnh,Load and Store
-                int type = instruction.getType();
-                int opCode = instruction.getOpCode();
-                ArrayList<Integer>params = instruction.getParams();
-                switch(type){
-                    case 5:
-                        if(opCode == 14){
-                            int address = registers.get(params.get(0));
-                            int offset = address%4;
-                            int tag = address - offset;
-                            int out = Memory.WAIT;
-
-                            //getting line
-                            while (out == Memory.WAIT) {
-                                out = cache.read("Pipeline", address);
-                                System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
+                    switch (type) {
+                        case 0: // Data Processing with 3 operands (rd = r1 + r2)
+                            switch (opCode) {
+                                case 0:
+                                    int r_1 = params.get(1);
+                                    int r_2 = params.get(2);
+                                    params.add(registers.get(r_1) + registers.get(r_2));
+                                    System.out.println(params.get(3));
+                                    break;
                             }
-
-                            int[] line = {cache.read(name,tag), cache.read(name,tag+1), cache.read(name,tag+2), cache.read(name,tag+3)};
-                            line[offset] = registers.get(params.get(1));
-                            System.out.println("Param to store is " + line[offset]);
-                            cache.directWrite(tag,line,address,name,true);
-                        }
-                        break;
-                    case 6:
-                        if(opCode == 14){
-                            int address = registers.get(params.get(0));
-                            int offset = address%4;
-                            int tag = address - offset;
-                            int out = Memory.WAIT;
-
-                            //getting line
-                            while (out == Memory.WAIT) {
-                                out = cache.read("Pipeline", address);
-                                System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
+                            break;
+                        case 6: // Load/Store Immediate
+                            switch (opCode) {
+                                case 13:
+                                    //Only direct load happen in execute stage, all memory based loads happen in memory stage
+                                    registers.set(params.get(0), params.get(1));
+                                    break;
+                                case 14:
+                                    //Store gets executed in the write back or memory access stage
+                                    break;
                             }
+                            break;
+                        default:
+                            break;
+                    }
 
-                            int[] line = {cache.read(name,tag), cache.read(name,tag+1), cache.read(name,tag+2), cache.read(name,tag+3)};
-                            line[offset] = params.get(1);
-                            System.out.println("Param to store is " + line[offset]);
-                            cache.directWrite(tag,line,address,name,true);
-                        }
-                        break;
-                    case 7:
-                        break;
+                    break;
                 }
-            } else if(name.equals("Write Back")){
-                this.instruction = i;
+                case "Memory Access": {
+                    this.instruction = i;
+                    //Needs to be implemented Bracnh,Load and Store
+                    int type = instruction.getType();
+                    int opCode = instruction.getOpCode();
+                    ArrayList<Integer> params = instruction.getParams();
+                    switch (type) {
+                        case 5: // Load/Store
+                            if (opCode == 14) {
+                                int address = registers.get(params.get(0));
+                                int offset = address % 4;
+                                int tag = address - offset;
+                                out = Memory.WAIT;
 
-                int type = instruction.getType();
-                int opCode = instruction.getOpCode();
-                ArrayList<Integer> params = instruction.getParams();
+                                //getting line
+                                while (out == Memory.WAIT) {
+                                    out = cache.read("Pipeline", address);
+                                    System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
+                                }
 
-                switch (type) {
-                    case 0:
-                        switch(opCode){
-                            case 0:
-                                registers.set(params.get(0),params.get(3));
-                                break;
-                        }
-                        break;
-                    case 6:
-                        switch(opCode){
+                                int[] line = {cache.read(name, tag), cache.read(name, tag + 1), cache.read(name, tag + 2), cache.read(name, tag + 3)};
+                                line[offset] = registers.get(params.get(1));
+                                System.out.println("Param to store is " + line[offset]);
+                                cache.directWrite(tag, line, address, name, true);
+                            }
+                            break;
+                        case 6: // Load/Store immediate
+                            if (opCode == 14) {
+                                int address = registers.get(params.get(0));
+                                int offset = address % 4;
+                                int tag = address - offset;
+                                out = Memory.WAIT;
 
-                            case 13:
+                                //getting line
+                                while (out == Memory.WAIT) {
+                                    out = cache.read("Pipeline", address);
+                                    System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
+                                }
 
-                                break;
-                            case 14:
-                                break;
-                        }
-                        break;
-                    default:
-                        break;
+                                int[] line = {cache.read(name, tag), cache.read(name, tag + 1), cache.read(name, tag + 2), cache.read(name, tag + 3)};
+                                line[offset] = params.get(1);
+                                System.out.println("Param to store is " + line[offset]);
+                                cache.directWrite(tag, line, address, name, true);
+                            }
+                            break;
+                        case 7:
+                            break;
+                    }
+                    break;
+                }
+                case "Write Back": {
+                    this.instruction = i;
+
+                    int type = instruction.getType();
+                    int opCode = instruction.getOpCode();
+                    ArrayList<Integer> params = instruction.getParams();
+
+                    switch (type) {
+                        case 0:
+                            switch (opCode) {
+                                case 0:
+                                    registers.set(params.get(0), params.get(3));
+                                    break;
+                            }
+                            break;
+                        case 6:
+                            switch (opCode) {
+                                case 13:
+                                    break;
+                                case 14:
+                                    break;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
                 }
             }
 
@@ -237,13 +245,7 @@ public class Pipeline implements NotifyAvailable {
             Instruction instrForNextStage = instruction;
             instruction = null;
 
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    nextStage.run(instrForNextStage);
-                }
-            }).start();
-
+            new Thread(() -> nextStage.run(instrForNextStage)).start();
             toNotify.nextStageAvailable();
         }
 
