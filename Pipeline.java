@@ -146,43 +146,40 @@ public class Pipeline implements NotifyAvailable {
                         case 5: // Load/Store
                             if (opCode == 14) {
                                 int address = registers.get(params.get(0));
-                                int offset = address % 4;
-                                int tag = address - offset;
                                 out = Memory.WAIT;
 
                                 //getting line
                                 while (out == Memory.WAIT) {
-                                    out = cache.read("Pipeline", address);
-                                    System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
+                                    out = RAM.write("Pipeline", address, registers.get(params.get(1)));
+                                    System.out.println("Memory returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
                                 }
 
-                                int[] line = {cache.read(name, tag), cache.read(name, tag + 1), cache.read(name, tag + 2), cache.read(name, tag + 3)};
-                                line[offset] = registers.get(params.get(1));
-                                System.out.println("Param to store is " + line[offset]);
-                                cache.directWrite(tag, line, address, name, true);
+  //                              int[] line = {cache.read(name, tag), cache.read(name, tag + 1), cache.read(name, tag + 2), cache.read(name, tag + 3)};
+    //                            line[offset] = registers.get(params.get(1));
+ //                               System.out.println("Param to store is " + line[offset]);
+      //                          cache.directWrite(tag, line, address, name, true);
                             }
                             break;
                         case 6: // Load/Store immediate
                             if (opCode == 14) {
                                 int address = registers.get(params.get(0));
-                                int offset = address % 4;
-                                int tag = address - offset;
                                 out = Memory.WAIT;
 
                                 //getting line
                                 while (out == Memory.WAIT) {
-                                    out = cache.read("Pipeline", address);
-                                    System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
+                                    out = RAM.write("Pipeline", address,registers.get(params.get(1)));
+                                    System.out.println("Memory returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
                                 }
 
-                                int[] line = {cache.read(name, tag), cache.read(name, tag + 1), cache.read(name, tag + 2), cache.read(name, tag + 3)};
-                                line[offset] = params.get(1);
-                                System.out.println("Param to store is " + line[offset]);
-                                cache.directWrite(tag, line, address, name, true);
+      //                          int[] line = {cache.read(name, tag), cache.read(name, tag + 1), cache.read(name, tag + 2), cache.read(name, tag + 3)};
+    //                            line[offset] = params.get(1);
+ //                               System.out.println("Param to store is " + line[offset]);
+   //                             cache.directWrite(tag, line, address, name, true);
                             }
                             break;
                         case 7:
                             break;
+
                     }
                     break;
                 }
