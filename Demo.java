@@ -74,7 +74,7 @@ public class Demo extends Application {
         registersTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         registersTable.setPrefHeight(428);
         registersTable.setMaxWidth(120);
-
+        registersTable.setFocusTraversable(false);
         registersTable.refresh();
 
         TableView cacheTable = new TableView();
@@ -100,6 +100,7 @@ public class Demo extends Application {
         cacheTable.getColumns().addAll(lruCol, tagCol, dirtyCol, validCol, w1Col, w2Col, w3Col, w4Col);
         cacheTable.setItems(cache.lineData);
         cacheTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        cacheTable.setFocusTraversable(false);
 
         final HBox hBox = new HBox();
         hBox.setSpacing(5);
@@ -112,7 +113,6 @@ public class Demo extends Application {
         stage.show();
 
        runInstructions();
-        //demoInstructions();
     }
 
     public void setup() {
@@ -122,6 +122,7 @@ public class Demo extends Application {
         pipeline = new Pipeline(registers, cache, RAM);
     }
 
+    // Load demo instructions and run them in pipeline
     public void runInstructions() {
         try {
             loadInstructions(24000, "demo1.txt");
@@ -134,54 +135,7 @@ public class Demo extends Application {
         pipeline.run(24000);
     }
 
-    public void demoInstructions() {
-
-        testRead(0);
-
-        // Warming up the cache
-        int address = 1000;
-        for(int i = 0; i < 4; i++){
-            testRead(address);
-            address += 4;
-        }
-
-        address = 8000;
-        for(int i = 0; i < 1; i++){
-            testRead(address);
-            address += 4;
-        }
-
-        address = 16000;
-        for(int i = 0; i < 3; i++){
-            testRead(address);
-            address += 4;
-        }
-
-        address = 24000;
-        for(int i = 0; i < 8; i++){
-            testRead(address);
-            address += 4;
-        }
-
-        cache.directWrite(8000, new int[]{2,22,12,100},8000,"Main", true);
-        cache.directWrite(16000, new int[]{2,22,12,100},16000,"Main", true);
-        cache.directWrite(24000, new int[]{2,22,12,100},24000,"Main", true);
-
-        RAM.printData(1000,1064);
-    }
-
-    public int testRead(int address) {
-        System.out.println("Trying to read value at " + address + " from cache");
-        int out = Memory.WAIT;
-
-        while (out == Memory.WAIT) {
-            out = cache.read("Main", address);
-            System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
-        }
-
-        return out;
-    }
-
+    // Loads instructions from file into RAM at programAddress
     public void loadInstructions(int programAddress, String fileName) throws IOException {
         int addr = programAddress;
 
