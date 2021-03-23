@@ -5,12 +5,14 @@ import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -39,15 +41,41 @@ public class Demo extends Application {
         TableView registersTable = new TableView();
         registersTable.setSelectionModel(null);
 
-        TableColumn registerCol = new TableColumn("Register");
+        TableColumn labelCol = new TableColumn("#");
+        labelCol.setCellFactory(new Callback<TableColumn, TableCell>() {
+            @Override
+            public TableCell call(TableColumn param) {
+                return new TableCell() {
+                    @Override protected void updateItem(Object item, boolean empty) {
+                        super.updateItem(item, empty);
+
+                        if (this.getTableRow() != null) {
+                            int row = this.getTableRow().getIndex();
+
+                            String label = row + "";
+                            if (row >= 14) label = row == 14 ? "LR" : "PC";
+
+                            setText(label);
+                        }
+                    }
+                };
+            }
+        });
+
+        labelCol.setMaxWidth(1200);
+        labelCol.setStyle( "-fx-alignment: CENTER;");
+
+        TableColumn registerCol = new TableColumn("Value");
         registerCol.setCellValueFactory(c -> ((TableColumn.CellDataFeatures)c).getValue());
         registerCol.setStyle( "-fx-alignment: CENTER;");
 
-        registersTable.getColumns().add(registerCol);
+        registersTable.getColumns().addAll(labelCol, registerCol);
         registersTable.setItems(registers.registerData);
         registersTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         registersTable.setPrefHeight(428);
-        registersTable.setMaxWidth(80);
+        registersTable.setMaxWidth(120);
+
+        registersTable.refresh();
 
         TableView cacheTable = new TableView();
         cacheTable.setSelectionModel(null);
