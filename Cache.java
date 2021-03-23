@@ -46,7 +46,7 @@ public class Cache extends Memory {
     @Override
     public int read(String callingFrom, int address) {
         int offset = address % 4;
-        int tag = address - offset;//getting start of the line
+        int tag = address - offset; //getting start of the line
         int tagLoc = -1;
 
         //Finding the set of the address

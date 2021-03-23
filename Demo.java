@@ -1,6 +1,5 @@
 //Cache num of lines should be multiples of 4
 import javafx.application.Application;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -10,7 +9,6 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
@@ -155,7 +153,7 @@ public class Demo extends Application {
         // Write END (-1) after program
         int out = Memory.WAIT;
         while (out == Memory.WAIT) {
-            out = RAM.write("Main", addr, Instruction.END);
+            out = RAM.write("Main", addr, Instruction.HALT);
         }
     }
 }
