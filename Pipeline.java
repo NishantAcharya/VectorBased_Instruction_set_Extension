@@ -13,6 +13,8 @@ public class Pipeline implements NotifyAvailable {
     private Registers registers;
     private Memory RAM;
 
+    private int endID = Integer.MAX_VALUE;
+
     public Pipeline(Registers registers, Cache cache, Memory RAM) {
         this.cache = cache;
         this.registers = registers;
@@ -36,20 +38,34 @@ public class Pipeline implements NotifyAvailable {
 
     }
 
+    int instrID = 0;
+
     public void run(int programAddress) {
         runningProgram = true;
+
+        // Pre-set variables to track instructions
+        instrID = 0;
+        endID = Integer.MAX_VALUE;
+
+        // Set PC to address of program
         registers.set(15, programAddress);
 
         if (firstStageAvailable) {
-            stages[0].run(new Instruction());
+            int currID = instrID;
+            instrID++;
+
+            stages[0].run(new Instruction(currID));
             firstStageAvailable = false;
         }
     }
 
     @Override
     public void nextStageAvailable() {
-        if (runningProgram) {
-            stages[0].run(new Instruction());
+        if (runningProgram && instrID < endID) {
+            int currID = instrID;
+            instrID++;
+
+            stages[0].run(new Instruction(currID));
             firstStageAvailable = false;
         }
     }
@@ -79,9 +95,11 @@ public class Pipeline implements NotifyAvailable {
         }
 
         public void run(Instruction i) {
+            if (i.id >= endID) return;
+
             this.finishedRun = false;
             this.instruction = i;
-            System.out.println("Running at " + name + ": " + i);
+            System.out.println("Running at " + name + ": INSTR_" + i.id + ", " + i);
 
             // Checking which version of run to go with
             switch (name) {
@@ -93,6 +111,10 @@ public class Pipeline implements NotifyAvailable {
                     while (out == Memory.WAIT) {
                         out = RAM.read(name, PC);
                     }
+
+                    if (instruction.checkIfHalt(out)) // Check if halt instruction
+                        break;
+
 
                     instruction.instructionToBinaryString(out);
                     instruction.addStage(name);
@@ -144,7 +166,7 @@ public class Pipeline implements NotifyAvailable {
                     ArrayList<Integer> params = instruction.getParams();
                     switch (type) {
                         case 5: // Load/Store
-                            if (opCode == 14) {
+                            if (opCode == 14) { // Store
                                 int address = registers.get(params.get(0));
                                 int offset = address % 4;
                                 int tag = address - offset;
@@ -163,7 +185,7 @@ public class Pipeline implements NotifyAvailable {
                             }
                             break;
                         case 6: // Load/Store immediate
-                            if (opCode == 14) {
+                            if (opCode == 14) { // Store
                                 int address = registers.get(params.get(0));
                                 int offset = address % 4;
                                 int tag = address - offset;
@@ -175,7 +197,7 @@ public class Pipeline implements NotifyAvailable {
                                     System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
                                 }
 
-                                int[] line = {cache.read(name, tag), cache.read(name, tag + 1), cache.read(name, tag + 2), cache.read(name, tag + 3)};
+                                int[] line = { cache.read(name, tag), cache.read(name, tag + 1), cache.read(name, tag + 2), cache.read(name, tag + 3)};
                                 line[offset] = params.get(1);
                                 System.out.println("Param to store is " + line[offset]);
                                 cache.directWrite(tag, line, address, name, true);
@@ -219,8 +241,10 @@ public class Pipeline implements NotifyAvailable {
             instruction.addStage(name);
             finishedRun = true;
 
-            if (instruction.getStrValue().equals("END")) {
-                System.out.println("Reached END Instruction");
+            if (instruction.toString().equals("END")) {
+                System.out.println("Reached END Instruction (INSTR" + instruction.id + ")");
+                endID = instruction.id;
+
                 this.instruction = null;
                 this.finishedRun = true;
 
@@ -245,8 +269,8 @@ public class Pipeline implements NotifyAvailable {
             Instruction instrForNextStage = instruction;
             instruction = null;
 
-            new Thread(() -> nextStage.run(instrForNextStage)).start();
             toNotify.nextStageAvailable();
+            new Thread(() -> nextStage.run(instrForNextStage)).start();
         }
 
         public void setToNotify(NotifyAvailable na) {
