@@ -258,7 +258,7 @@ public class Pipeline implements NotifyAvailable {
                 }
             } else {
                 // Last stage of pipeline
-                System.out.println("Pipeline finished for: " + instruction);
+                System.out.println("INSTR_" + instruction.id + ": Pipeline finished");
                 toNotify.nextStageAvailable();
             }
         }
