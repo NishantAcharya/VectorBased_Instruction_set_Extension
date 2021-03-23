@@ -3,7 +3,7 @@ import java.util.HashMap;
 
 public class Instruction {
 
-    public static final int END = 0b00001111000000000000000000000000;
+    public static final int HALT = 0b00001111000000000000000000000000;
 
     private HashMap<Integer, String> opMap;
     private String binaryValue;
@@ -107,8 +107,8 @@ public class Instruction {
     }
 
     public boolean checkIfHalt(int instr) {
-        if (instr == Instruction.END) {
-            strValue = "END";
+        if (instr == Instruction.HALT) {
+            strValue = "HALT";
             return true;
         }
 

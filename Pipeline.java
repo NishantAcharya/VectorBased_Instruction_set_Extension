@@ -99,7 +99,7 @@ public class Pipeline implements NotifyAvailable {
 
             this.finishedRun = false;
             this.instruction = i;
-            System.out.println("Running at " + name + ": INSTR_" + i.id + ", " + i);
+            System.out.println("INSTR_" + i.id + ": Running at " + name + ": " + i);
 
             // Checking which version of run to go with
             switch (name) {
@@ -137,7 +137,6 @@ public class Pipeline implements NotifyAvailable {
                                     int r_1 = params.get(1);
                                     int r_2 = params.get(2);
                                     params.add(registers.get(r_1) + registers.get(r_2));
-                                    System.out.println(params.get(3));
                                     break;
                             }
                             break;
@@ -241,8 +240,8 @@ public class Pipeline implements NotifyAvailable {
             instruction.addStage(name);
             finishedRun = true;
 
-            if (instruction.toString().equals("END")) {
-                System.out.println("Reached END Instruction (INSTR" + instruction.id + ")");
+            if (instruction.toString().equals("HALT")) {
+                System.out.println("Reached HALT Instruction (INSTR_" + instruction.id + ")");
                 endID = instruction.id;
 
                 this.instruction = null;
