@@ -19,7 +19,8 @@ public class Registers {
         registerData = FXCollections.observableList(dataList);
     }
 
-    // Can access registers 0 -> 13, 14/15 are special registers
+    // Can access registers 0 -> 12, 13/14/15 are special registers
+    //13 is CSPR for storing cmp values
     // 14 is Linking register
     // 15 is Program Counter
     public void set(int register, int value) {

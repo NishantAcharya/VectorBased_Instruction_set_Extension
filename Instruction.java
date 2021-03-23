@@ -94,6 +94,11 @@ public class Instruction {
                 params.add(r_d);
                 params.add(r_1);
                 break;
+            case 7:
+                r_d = (instr & 0b11110000000000000000000000000000) >> 28;//Condition
+                r_1 = (instr & 0b00000000011111111111111111111111);//Offset/number of lines of code to jump
+                params.add(r_d);
+                params.add(r_1);
             default:
                 break;
         }

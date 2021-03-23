@@ -53,7 +53,7 @@ public class Pipeline implements NotifyAvailable {
             firstStageAvailable = false;
         }
     }
-
+    //Need to add conditional elements to each instruction
     // Each stage extends this class
     //Use the next stage to figure out which stage you are in
     //Since there are only 5 stages and they are known, make 5 conditions for run and seperate the different stages
@@ -81,13 +81,14 @@ public class Pipeline implements NotifyAvailable {
         public void run(Instruction i) {
             this.finishedRun = false;
             this.instruction = i;
+            int PC;
             System.out.println("Running at " + name + ": " + i);
 
             // Checking which version of run to go with
             switch (name) {
                 case "Fetch":
                     int out = Memory.WAIT;
-                    int PC = registers.get(15);
+                    PC = registers.get(15);
 
                     // Gets instruction in memory from address in PC
                     while (out == Memory.WAIT) {
@@ -115,7 +116,15 @@ public class Pipeline implements NotifyAvailable {
                                     int r_1 = params.get(1);
                                     int r_2 = params.get(2);
                                     params.add(registers.get(r_1) + registers.get(r_2));
-                                    System.out.println(params.get(3));
+                                //    System.out.println(params.get(3));
+                                    break;
+                                case 12:
+                                    r_1 = params.get(1);
+                                    r_2 = params.get(2);
+                                    int cond = params.get(0);//Getting condition code
+                                    if(r_1 < r_2){
+                                        registers.set(13,4);
+                                    }
                                     break;
                             }
                             break;
@@ -178,6 +187,30 @@ public class Pipeline implements NotifyAvailable {
                             }
                             break;
                         case 7:
+                            int cond = params.get(0);//Getting condition code
+                            switch (cond){
+                                //Check CSPR val and see if it equal to cond
+                                case 0:
+                                    break;
+                                case 1:
+                                    break;
+                                case 2:
+                                    break;
+                                case 3:
+                                    break;
+                                case 4:
+                                    if(cond == registers.get(13)){
+                                        PC = registers.get(15);
+                                        registers.set(14,PC);
+                                        registers.set(15, PC + params.get(1));
+                                    }
+                                    break;
+                                case 15://Ask about how to deal with function calls in function calls
+                                    PC = registers.get(15);
+                                    registers.set(14,PC);
+                                    registers.set(15, PC + params.get(1));
+                                    break;
+                            }
                             break;
 
                     }

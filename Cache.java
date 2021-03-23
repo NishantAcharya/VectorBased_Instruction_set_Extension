@@ -202,6 +202,10 @@ public class Cache extends Memory {
         }
     }
 
+    //Updates a single value in cache if found else writes the value to memory,placeholder for now
+    public void processorWrite(int tag, int val, int address, String callingFrom) {
+    }
+
     // Holds cache line data to display in table
     public class LineData {
         public SimpleIntegerProperty lru, tag, v, word1, word2, word3, word4, dirty;
