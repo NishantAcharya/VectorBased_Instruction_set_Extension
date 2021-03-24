@@ -10,6 +10,7 @@ public class Instruction {
     private String strValue;
     private int type;
     private int opCode;
+    private int cond;
     private ArrayList<Integer> params;
     private ArrayList<String> stagesDone;
     private int offset; // for branching, the number of lines to skip on branching
@@ -67,7 +68,7 @@ public class Instruction {
 
         instr = Integer.parseInt(binaryValue, 2);
 
-        this.type = (instr & 0b00001111000000000000000000000000) >> 24;
+        this.type =   (instr & 0b00001111000000000000000000000000) >> 24;
         this.opCode = (instr & 0b00000000111100000000000000000000) >> 20;
 
         //Defining parameters, all of them may not be used
@@ -78,9 +79,11 @@ public class Instruction {
                 r_d = (instr & 0b00000000000001111000000000000000) >> 15;
                 r_1 = (instr & 0b00000000000000000111100000000000) >> 11;
                 r_2 = (instr & 0b00000000000000000000011110000000) >> 7;
+                cond =(instr & 0b11110000000000000000000000000000) >> 28;
                 params.add(r_d);
                 params.add(r_1);
                 params.add(r_2);
+                params.add(cond);
 
                 this.strValue = opMap.get(opCode) + " R" + r_d + " R" + r_1 + " R" + r_2;
                 break;
@@ -105,6 +108,7 @@ public class Instruction {
                 r_1 = (instr & 0b00000000011111111111111111111111);//Offset/number of lines of code to jump
                 params.add(r_d);
                 params.add(r_1);
+                break;
             default:
                 this.strValue = "INVALID TYPE";
                 break;

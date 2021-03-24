@@ -111,6 +111,7 @@ public class Demo extends Application {
         stage.show();
 
        runInstructions();
+
     }
 
     public void setup() {
@@ -129,6 +130,7 @@ public class Demo extends Application {
         System.out.println("LOADED PROGRAM INTO MEMORY");
         RAM.printData(24000, 24004);
         System.out.println();
+
 
         pipeline.run(24000);
     }

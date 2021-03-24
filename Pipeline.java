@@ -99,14 +99,14 @@ public class Pipeline implements NotifyAvailable {
 
             this.finishedRun = false;
             this.instruction = i;
-            int PC;
+
             System.out.println("INSTR_" + i.id + ": Running at " + name + ": " + i);
 
             // Checking which version of run to go with
             switch (name) {
                 case "Fetch":
                     int out = Memory.WAIT;
-                    PC = registers.get(15);
+                    int PC = registers.get(15);
 
                     // Gets instruction in memory from address in PC
                     while (out == Memory.WAIT) {
@@ -138,15 +138,19 @@ public class Pipeline implements NotifyAvailable {
                                     int r_1 = params.get(1);
                                     int r_2 = params.get(2);
                                     params.add(registers.get(r_1) + registers.get(r_2));
-                                //    System.out.println(params.get(3));
+                                    System.out.println(params.get(4));
                                     break;
                                 case 12:
                                     r_1 = params.get(1);
                                     r_2 = params.get(2);
-                                    int cond = params.get(0);//Getting condition code
-                                    if(r_1 < r_2){
-                                        registers.set(13,4);
+                                    int cond = params.get(3);//Getting condition code
+                                    if (r_1 < r_2){
+                                        params.add(4);
                                     }
+                                    else{
+                                        params.add(-1);
+                                    }
+
                                     break;
                             }
                             break;
@@ -221,16 +225,22 @@ public class Pipeline implements NotifyAvailable {
                                 case 3:
                                     break;
                                 case 4:
-                                    if(cond == registers.get(13)){
+                                    if(4 == registers.get(13)){
                                         PC = registers.get(15);
-                                        registers.set(14,PC);
+                                        registers.set(14,PC-2);
                                         registers.set(15, PC + params.get(1));
+
+                                    }
+                                    else{
+                                        PC = registers.get(15);
+                                        registers.set(14,PC-3);
                                     }
                                     break;
-                                case 15://Ask about how to deal with function calls in function calls
+                                case 7://Ask about how to deal with function calls in function calls
                                     PC = registers.get(15);
+                                    int lr = registers.get(14);
                                     registers.set(14,PC);
-                                    registers.set(15, PC + params.get(1));
+                                    registers.set(15, lr + params.get(1));
                                     break;
                             }
                             break;
@@ -249,7 +259,10 @@ public class Pipeline implements NotifyAvailable {
                         case 0:
                             switch (opCode) {
                                 case 0:
-                                    registers.set(params.get(0), params.get(3));
+                                    registers.set(params.get(0), params.get(4));
+                                    break;
+                                case 12:
+                                    registers.set(params.get(0),params.get(4));
                                     break;
                             }
                             break;
