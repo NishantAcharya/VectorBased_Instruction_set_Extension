@@ -7,17 +7,23 @@ public class Instruction {
 
     private HashMap<Integer, String> opMap;
     private HashMap<Integer, String> condMap;
-    private HashMap<String, Runnable> callbacks;
+    private final HashMap<String, Runnable> callbacks;
+
+    private final ArrayList<AddressValuePair> writebackRegisters;
+    private final ArrayList<AddressValuePair> writebackMem;
 
     private String binaryValue;
     private String strValue;
     private int type;
     private int opCode;
-    private int cond;
-    private ArrayList<Integer> params;
-    private ArrayList<String> stagesDone;
+    private int condCode;
+    private final ArrayList<Integer> params;
+    private final ArrayList<String> stagesDone;
     private int offset; // for branching, the number of lines to skip on branching
+
     public int id;
+    public final ArrayList<Integer> stallRegisters;
+    private final ArrayList<Integer> dependsOnRegisters;
 
     public Instruction(int id) {
         this.id = id;
@@ -33,8 +39,35 @@ public class Instruction {
         callbacks.put("Memory Access", null);
         callbacks.put("Write Back", null);
 
+        writebackRegisters = new ArrayList<>();
+        writebackMem = new ArrayList<>();
+        stallRegisters = new ArrayList<>();
+        dependsOnRegisters = new ArrayList<>();
+
         this.buildOpMap();
         this.buildCondMap();
+    }
+
+    public boolean dependsOn(Instruction other) {
+        for (Integer reg : dependsOnRegisters)
+            if (!other.stagesDone.contains("Write Back") && other.stallRegisters.contains(reg))
+                return true;
+
+        return false;
+    }
+
+    public void saveToWriteBack(int address, int value, boolean inRegister) {
+        AddressValuePair avp = new AddressValuePair(address, value);
+
+        if (inRegister) {
+            writebackRegisters.add(avp);
+        } else {
+            writebackMem.add(avp);
+        }
+    }
+
+    public ArrayList<AddressValuePair> getAVPsToWriteBack(boolean inRegister) {
+        return inRegister ? writebackRegisters : writebackMem;
     }
 
     public void instructionToBinaryString(int instr) {
@@ -104,45 +137,75 @@ public class Instruction {
         this.type =   (instr & 0b00001111000000000000000000000000) >> 24;
         this.opCode = (instr & 0b00000000111100000000000000000000) >> 20;
 
-        //Defining parameters, all of them may not be used
-        int r_d, r_1, r_2;
+        int r_d, r_1, r_2, imm, sign;
 
         switch(type){
             case 0: // Data Processing with 3 operands (rd = r1 + r2)
                 r_d = (instr & 0b00000000000001111000000000000000) >> 15;
                 r_1 = (instr & 0b00000000000000000111100000000000) >> 11;
                 r_2 = (instr & 0b00000000000000000000011110000000) >> 7;
-                cond =(instr & 0b11110000000000000000000000000000) >> 28;
+                condCode = (instr & 0b11110000000000000000000000000000) >> 28;
+
                 params.add(r_d);
                 params.add(r_1);
                 params.add(r_2);
-                params.add(cond);
+
+                stallRegisters.add(r_d);
+                dependsOnRegisters.add(r_1);
+                dependsOnRegisters.add(r_2);
 
                 this.strValue = opMap.get(opCode) + " R" + r_d + " R" + r_1 + " R" + r_2;
+                break;
+            case 3: // Data Processing with operand and immediate (rd = r1 + 3)
+                r_d = (instr & 0b00000000000001111000000000000000) >> 15;
+                r_1 = (instr & 0b00000000000000000111100000000000) >> 11;
+                imm = (instr & 0b00000000000000000000011111111000) >> 3;
+                condCode = (instr & 0b11110000000000000000000000000000) >> 28;
+
+                params.add(r_d);
+                params.add(r_1);
+                params.add(imm);
+
+                stallRegisters.add(r_d);
+                dependsOnRegisters.add(r_1);
+
+                this.strValue = opMap.get(opCode) + " R" + r_d + " R" + r_1 + " " + imm;
                 break;
             case 5: // Load/Store
                 r_d = (instr & 0b00000000000001111000000000000000) >> 15;
                 r_1 = (instr  & 0b0000000000000000111100000000000) >> 11;
+
                 params.add(r_d);
                 params.add(r_1);
+
+                if (opCode == 13) {
+                    stallRegisters.add(r_d);
+                    dependsOnRegisters.add(r_1);
+                }
 
                 this.strValue = opMap.get(opCode) + " R" + r_d + " R" + r_1;
                 break;
             case 6: // Load/Store immediate
                 r_d = (instr & 0b00000000000001111000000000000000) >> 15;
-                r_1 = (instr  & 0b00000000000000000111111111111000) >> 3;
-                params.add(r_d);
-                params.add(r_1);
+                imm = (instr  & 0b00000000000000000111111111111000) >> 3;
 
-                this.strValue = opMap.get(opCode) + " R" + r_d + " " + r_1;
+                params.add(r_d);
+                params.add(imm);
+
+                if (opCode == 13)
+                    stallRegisters.add(r_d);
+
+                this.strValue = opMap.get(opCode) + " R" + r_d + " " + imm;
                 break;
             case 7:
-                r_d = (instr & 0b11110000000000000000000000000000) >> 28;//Condition
-                r_1 = (instr & 0b00000000011111111111111111111111);//Offset/number of lines of code to jump
-                params.add(r_d);
+                condCode = (instr & 0b11110000000000000000000000000000) >> 28; //Condition
+                sign = (instr & 0b00000000010000000000000000000000) >> 22;
+                r_1 = (instr & 0b00000000001111111111111111111111); //Offset/number of lines of code to jump
+
+                r_1 *= (sign == 1 ? -1 : 1);
                 params.add(r_1);
 
-                strValue = "BRANCH " + r_1 + " IF " + condMap.get(r_d);
+                strValue = "BRANCH " + r_1 + " IF " + condMap.get(condCode);
                 break;
             default:
                 this.strValue = "INVALID TYPE";
@@ -190,5 +253,18 @@ public class Instruction {
         condMap.put(5, "NON-ZERO");
         condMap.put(6, "TRANSPOSE");
         condMap.put(7, "NO COND");
+    }
+
+    public int getCondCode() {
+        return condCode;
+    }
+
+    public class AddressValuePair {
+        int address, value;
+
+        public AddressValuePair(int address, int value) {
+            this.address = address;
+            this.value = value;
+        }
     }
 }

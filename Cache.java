@@ -202,8 +202,41 @@ public class Cache extends Memory {
         }
     }
 
-    //Updates a single value in cache if found else writes the value to memory,placeholder for now
-    public void processorWrite(int tag, int val, int address, String callingFrom) {
+    public void processorWrite(int address, int val, String callingFrom) {
+        int tagLoc = -1;
+        int tag = address - address % 4;
+
+        //Finding the set of the address
+        int set = (address / 16) % 4; //Setting set to cycle of 16 words
+
+        // Check if tag is in cache
+        for (int i = set * 4; i < (set * 4) + lru[set].length; i++) {
+            if (tags[i] == tag) {
+                tagLoc = i;
+                break;
+            }
+        }
+
+        //Write to cache after ejecting dirty bit
+        if(tagLoc >= 0) {
+            //Checking the dirty bits and writing back to Next Memory if the bit is true
+            if (dirty[tagLoc]) {
+                int[] oldLine = super.getLine("", tagLoc * 4);
+                int out = Memory.WAIT;
+                System.out.println("Trying to writeback line to memory at address " + (tag));
+                while (out == Memory.WAIT) {
+                    out = nextMemory.writeLine(callingFrom, (tag / 4), oldLine);
+                    System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
+                }
+            }
+
+            this.writeSingleValueInCache(tagLoc, address % 4, val);
+            dirty[tagLoc] = true;
+        }
+        //Write to memory with dirty bit set to true
+        else {
+            this.write("Cache",address,val);
+        }
     }
 
     // Holds cache line data to display in table

@@ -13,6 +13,8 @@ public class Pipeline implements NotifyAvailable {
     private Registers registers;
     private Memory RAM;
 
+    private ArrayList<Instruction> currInstructions;
+
     private int endID = Integer.MAX_VALUE;
 
     public Pipeline(Registers registers, Cache cache, Memory RAM) {
@@ -35,7 +37,6 @@ public class Pipeline implements NotifyAvailable {
         stage1.setToNotify(this);
 
         stages = new Stage[] { stage1, stage2, stage3, stage4, stage5 };
-
     }
 
     int instrID = 0;
@@ -45,7 +46,8 @@ public class Pipeline implements NotifyAvailable {
 
         // Pre-set variables to track instructions
         instrID = 0;
-        endID = 20;//Integer.MAX_VALUE;
+        endID = Integer.MAX_VALUE;
+        currInstructions = new ArrayList<>();
 
         // Set PC to address of program
         registers.set(15, programAddress);
@@ -54,8 +56,10 @@ public class Pipeline implements NotifyAvailable {
             int currID = instrID;
             instrID++;
 
-            stages[0].run(new Instruction(currID));
+            Instruction instr = new Instruction(currID);
             firstStageAvailable = false;
+            currInstructions.add(instr);
+            stages[0].run(instr);
         }
     }
 
@@ -69,6 +73,7 @@ public class Pipeline implements NotifyAvailable {
             firstStageAvailable = false;
         }
     }
+
     //Need to add conditional elements to each instruction
     // Each stage extends this class
     //Use the next stage to figure out which stage you are in
@@ -85,6 +90,7 @@ public class Pipeline implements NotifyAvailable {
         private NotifyAvailable toNotify;
         private boolean nextStageAvailable;
         private boolean finishedRun;
+        private boolean stalled = false;
 
         public Stage(String name, Stage nextStage) {
             this.name = name;
@@ -99,6 +105,8 @@ public class Pipeline implements NotifyAvailable {
 
             this.finishedRun = false;
             this.instruction = i;
+
+            Instruction dependsOnInstr = null;
 
             System.out.println("INSTR_" + i.id + ": Running at " + name + ": " + i);
 
@@ -123,9 +131,17 @@ public class Pipeline implements NotifyAvailable {
                     break;
                 case "Decode":
                     instruction.decode();
+
+                    for (Instruction instr: currInstructions) {
+                        if (instruction.id == instr.id) continue;
+
+                        if (instruction.dependsOn(instr)) {
+                            if (dependsOnInstr == null || instr.id > dependsOnInstr.id)
+                                dependsOnInstr = instr;
+                        }
+                    }
                     break;
                 case "Execute": {
-                    this.instruction = i;
                     int type = instruction.getType();
                     int opCode = instruction.getOpCode();
                     ArrayList<Integer> params = instruction.getParams();
@@ -134,15 +150,17 @@ public class Pipeline implements NotifyAvailable {
                         case 0: // Data Processing with 3 operands (rd = r1 + r2)
                             switch (opCode) {
                                 case 0:
+                                    int r_d = params.get(0);
                                     int r_1 = params.get(1);
                                     int r_2 = params.get(2);
-                                    params.add(registers.get(r_1) + registers.get(r_2));
-                                    System.out.println(params.get(4));
+
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) + registers.get(r_2), true);
                                     break;
                                 case 12:
                                     r_1 = params.get(1);
                                     r_2 = params.get(2);
-                                    int cond = params.get(3);//Getting condition code
+
+                                    int cond = params.get(3); //Getting condition code
                                     if (r_1 < r_2){
                                         params.add(4);
                                     } else {
@@ -152,14 +170,54 @@ public class Pipeline implements NotifyAvailable {
                                     break;
                             }
                             break;
+                        case 3: // Data Processing with operand and immediate (rd = r1 + 3)
+                            switch (opCode) {
+                                case 0:
+                                    int r_d = params.get(0);
+                                    int r_1 = params.get(1);
+                                    int imm = params.get(2);
+
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) + imm, true);
+                                    break;
+                                case 12:
+                                    r_1 = params.get(1);
+                                    imm = params.get(2);
+
+                                    int cond = params.get(3);//Getting condition code
+                                    if (r_1 < imm){
+                                        params.add(4);
+                                    } else {
+                                        params.add(-1);
+                                    }
+
+                                    break;
+                            }
+                            break;
+                        case 5: // Load/Store
+                            switch (opCode) {
+                                case 13:
+                                    //Only direct load happen in execute stage, all memory based loads happen in memory stage
+                                    instruction.saveToWriteBack(params.get(0), registers.get(params.get(1)), true);
+                                    break;
+                                case 14:
+                                    //Store gets executed in the write back or memory access stage
+                                    int address = registers.get(params.get(0));
+                                    int value = registers.get(params.get(1));
+                                    instruction.saveToWriteBack(address, value, false);
+                                    break;
+                            }
+                            break;
                         case 6: // Load/Store Immediate
                             switch (opCode) {
                                 case 13:
                                     //Only direct load happen in execute stage, all memory based loads happen in memory stage
-                                    registers.set(params.get(0), params.get(1));
+                                    instruction.saveToWriteBack(params.get(0), params.get(1), true);
                                     break;
                                 case 14:
                                     //Store gets executed in the write back or memory access stage
+                                    int address = registers.get(params.get(0));
+                                    int value = params.get(1);
+                                    instruction.saveToWriteBack(address, value, false);
                                     break;
                             }
                             break;
@@ -170,118 +228,36 @@ public class Pipeline implements NotifyAvailable {
                     break;
                 }
                 case "Memory Access": {
-                    this.instruction = i;
-                    //Needs to be implemented Bracnh,Load and Store
-                    int type = instruction.getType();
-                    int opCode = instruction.getOpCode();
+                    // Needs to be implemented Branch,Load and Store
                     ArrayList<Integer> params = instruction.getParams();
-                    switch (type) {
-                        case 5: // Load/Store
-                            if (opCode == 14) { // Store
-                                int address = registers.get(params.get(0));
-                                out = Memory.WAIT;
 
-                                //getting line
-                                while (out == Memory.WAIT) {
-                                    out = RAM.write("Pipeline", address, registers.get(params.get(1)));
-                                    System.out.println("Memory returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
-                                }
-
-  //                              int[] line = {cache.read(name, tag), cache.read(name, tag + 1), cache.read(name, tag + 2), cache.read(name, tag + 3)};
-    //                            line[offset] = registers.get(params.get(1));
- //                               System.out.println("Param to store is " + line[offset]);
-      //                          cache.directWrite(tag, line, address, name, true);
-                            }
-                            break;
-                        case 6: // Load/Store immediate
-                            if (opCode == 14) { // Store
-                                int address = registers.get(params.get(0));
-                                out = Memory.WAIT;
-
-                                //getting line
-                                while (out == Memory.WAIT) {
-                                    out = RAM.write("Pipeline", address,registers.get(params.get(1)));
-                                    System.out.println("Memory returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
-                                }
-
-      //                          int[] line = {cache.read(name, tag), cache.read(name, tag + 1), cache.read(name, tag + 2), cache.read(name, tag + 3)};
-    //                            line[offset] = params.get(1);
- //                               System.out.println("Param to store is " + line[offset]);
-   //                             cache.directWrite(tag, line, address, name, true);
-                            }
-                            break;
-                        case 7:
-                            int cond = params.get(0);//Getting condition code
-                            switch (cond){
-                                //Check CSPR val and see if it equal to cond
-                                case 0:
-                                    break;
-                                case 1:
-                                    break;
-                                case 2:
-                                    break;
-                                case 3:
-                                    break;
-                                case 4:
-                                    if (4 == registers.get(13)){
-                                        PC = registers.get(15);
-                                        registers.set(14,PC-2);
-                                        registers.set(15, PC + params.get(1));
-                                    } else{
-                                        PC = registers.get(15);
-                                        registers.set(14,PC-3);
-                                    }
-                                    break;
-                                case 7://Ask about how to deal with function calls in function calls
-                                    PC = registers.get(15);
-                                    int lr = registers.get(14);
-                                    registers.set(14,PC);
-                                    registers.set(15, lr + params.get(1));
-                                    break;
-                            }
-                            break;
-
+                    for (Instruction.AddressValuePair avp: instruction.getAVPsToWriteBack(false)) {
+                        cache.processorWrite(avp.address, avp.value, name);
                     }
+
+                    if (instruction.isBranchingIstruction()) {
+                        int cond = instruction.getCondCode();
+
+                        if (registers.get(13) == cond) {
+                            PC = registers.get(15);
+                            registers.set(15, PC + params.get(0));
+                        }
+                    }
+
                     break;
                 }
                 case "Write Back": {
-                    this.instruction = i;
+                    for (Instruction.AddressValuePair avp: instruction.getAVPsToWriteBack(true))
+                        registers.set(avp.address, avp.value);
 
-                    int type = instruction.getType();
-                    int opCode = instruction.getOpCode();
-                    ArrayList<Integer> params = instruction.getParams();
-
-                    switch (type) {
-                        case 0:
-                            switch (opCode) {
-                                case 0:
-                                    registers.set(params.get(0), params.get(4));
-                                    break;
-                                case 12:
-                                    registers.set(params.get(0),params.get(4));
-                                    break;
-                            }
-                            break;
-                        case 6:
-                            switch (opCode) {
-                                case 13:
-                                    break;
-                                case 14:
-                                    break;
-                            }
-                            break;
-                        default:
-                            break;
-                    }
+                    // Remove from curr instructions because all dependencies settled
+                    currInstructions.remove(instruction);
                     break;
                 }
             }
 
             instruction.addStage(name);
             finishedRun = true;
-
-            // Checks if there are any callbacks associated with current stage
-            instruction.runCallbacks(name);
 
             if (instruction.toString().equals("HALT")) {
                 System.out.println("Reached HALT Instruction (INSTR_" + instruction.id + ")");
@@ -293,6 +269,26 @@ public class Pipeline implements NotifyAvailable {
                 runningProgram = false;
                 return;
             }
+
+            if (dependsOnInstr != null) {
+                System.out.println("INSTR_" + instruction.id + ": Stalled until " + dependsOnInstr.id + " writes back");
+                stalled = true;
+
+                dependsOnInstr.addCallback("Write Back", new Runnable() {
+                    @Override
+                    public void run() {
+                        stalled = false;
+                        stageFinished();
+                    }
+                });
+            } else {
+                stageFinished();
+            }
+        }
+
+        private void stageFinished() {
+            // Checks if there are any callbacks associated with current stage
+            instruction.runCallbacks(name);
 
             // Wait for next stage to be available
             if (nextStage != null) {
@@ -315,7 +311,6 @@ public class Pipeline implements NotifyAvailable {
                 instrForNextStage.addCallback("Memory Access", new Runnable() {
                     @Override
                     public void run() {
-                        System.out.println("RUNNING RUNNABLE FROM STAGE " + name);
                         toNotify.nextStageAvailable();
                     }
                 });
@@ -334,7 +329,7 @@ public class Pipeline implements NotifyAvailable {
         public void nextStageAvailable() {
             nextStageAvailable = true;
 
-            if (instruction != null && finishedRun) {
+            if (instruction != null && finishedRun && !stalled) {
                 runOnNextStage();
             }
         }

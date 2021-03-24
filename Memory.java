@@ -99,6 +99,10 @@ public class Memory {
         return 1;
     }
 
+    public void writeSingleValueInCache(int tag,int offset,int value) {
+        data[tag][offset] = value;
+    }
+
     //Method of direct access during write back since the cache line data is known
     public int readCache(String callingFrom, int tag , int offset) {
 
