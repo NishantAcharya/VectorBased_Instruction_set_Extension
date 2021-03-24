@@ -53,6 +53,9 @@ public class Instruction {
             if (!other.stagesDone.contains("Write Back") && other.stallRegisters.contains(reg))
                 return true;
 
+        if (isBranchingInstruction() && other.getOpCode() == 12)
+            return true;
+
         return false;
     }
 

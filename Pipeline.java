@@ -140,6 +140,8 @@ public class Pipeline implements NotifyAvailable {
                         if (instruction.id == instr.id) continue;
 
                         if (instruction.dependsOn(instr)) {
+                            stalled = true;
+
                             if (dependsOnInstr == null || instr.id > dependsOnInstr.id)
                                 dependsOnInstr = instr;
                         }
@@ -165,7 +167,7 @@ public class Pipeline implements NotifyAvailable {
                                     r_2 = registers.get(params.get(2));
 
                                     int cond = r_1 < r_2 ? 4 : -1;
-                                    registers.set(13, cond); // Set CSPR register
+                                    instruction.saveToWriteBack(13, cond, true);
                                     break;
                             }
                             break;
@@ -183,8 +185,7 @@ public class Pipeline implements NotifyAvailable {
                                     imm = params.get(2);
 
                                     int cond = r_1 < imm ? 4 : -1;
-                                    System.out.println(r_1 + " < " + imm + " CODE: " + cond);
-                                    registers.set(13, cond); // Set CSPR register
+                                    instruction.saveToWriteBack(13, cond, true);
                                     break;
                             }
                             break;
@@ -264,7 +265,6 @@ public class Pipeline implements NotifyAvailable {
 
             if (dependsOnInstr != null) {
                 System.out.println("INSTR_" + instruction.id + ": Stalled until INSTR_" + dependsOnInstr.id + " writes back");
-                stalled = true;
 
                 dependsOnInstr.addCallback("Write Back", () -> {
                     System.out.println("INSTR_" + instruction.id + ": No longer stalled");
@@ -300,7 +300,7 @@ public class Pipeline implements NotifyAvailable {
         }
 
         public void runOnNextStage() {
-            if (stalled) return;
+            if (stalled || instruction == null) return;
 
             nextStageAvailable = false;
             Instruction instrForNextStage = instruction;
@@ -312,7 +312,6 @@ public class Pipeline implements NotifyAvailable {
                 toNotify.nextStageAvailable();
             }
 
-            System.out.println("INS: " + instrForNextStage);
             new Thread(() -> nextStage.run(instrForNextStage)).start();
         }
 
