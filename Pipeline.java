@@ -168,7 +168,11 @@ public class Pipeline implements NotifyAvailable {
                                     r_1 = registers.get(params.get(1));
                                     r_2 = registers.get(params.get(2));
 
-                                    int cond = r_1 < r_2 ? 4 : -1;
+                                    int cond = 4;
+                                    if( r_1 < r_2){
+                                        cond = -1;
+                                    }
+                                    //Add more conditions
                                     instruction.saveToWriteBack(13, cond, true);
                                     break;
                             }
@@ -235,10 +239,18 @@ public class Pipeline implements NotifyAvailable {
 
                     if (instruction.isBranchingInstruction()) {
                         int cond = instruction.getCondCode();
-
+                    if(cond != 7) {
                         if (registers.get(13) == cond) {
                             PC = registers.get(15);
                             registers.set(15, PC + params.get(0) - 1);
+                        } else {
+                            PC = registers.get(15);
+                            registers.set(14, PC - 2); //Going back to compare
+                        }
+                    }
+                    else{//looping back
+                         int lr = registers.get(14);
+                         registers.set(15,lr);
                         }
                     }
 
