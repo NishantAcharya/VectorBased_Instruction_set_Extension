@@ -160,9 +160,9 @@ public class Pipeline implements NotifyAvailable {
                                     r_1 = params.get(1);
                                     r_2 = params.get(2);
 
-                                    int cond = params.get(3); //Getting condition code
+                                    int condCode = instruction.getCondCode();
                                     if (r_1 < r_2){
-                                        params.add(4);
+                                        params.add(condCode);
                                     } else {
                                         params.add(-1);
                                     }
@@ -185,7 +185,7 @@ public class Pipeline implements NotifyAvailable {
 
                                     int cond = params.get(3);//Getting condition code
                                     if (r_1 < imm){
-                                        params.add(4);
+                                        params.add(cond);
                                     } else {
                                         params.add(-1);
                                     }
@@ -241,6 +241,12 @@ public class Pipeline implements NotifyAvailable {
                         if (registers.get(13) == cond) {
                             PC = registers.get(15);
                             registers.set(15, PC + params.get(0));
+                            registers.set(14,PC-2);
+                        }
+                        else{
+                            PC = registers.get(15);
+                            int lr = registers.get(14);
+                            registers.set(15,lr);
                         }
                     }
 

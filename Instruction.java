@@ -17,6 +17,7 @@ public class Instruction {
     private int type;
     private int opCode;
     private int condCode;
+    private int linkCode = -1; //Setting the link code to an invalid value
     private final ArrayList<Integer> params;
     private final ArrayList<String> stagesDone;
     private int offset; // for branching, the number of lines to skip on branching
@@ -95,6 +96,7 @@ public class Instruction {
             r.run();
         }
     }
+    public int getHalt(){return this.linkCode;}
 
     public int getOffset(){
         return this.offset;
@@ -199,9 +201,9 @@ public class Instruction {
                 break;
             case 7:
                 condCode = (instr & 0b11110000000000000000000000000000) >> 28; //Condition
-                sign = (instr & 0b00000000010000000000000000000000) >> 22;
-                r_1 = (instr & 0b00000000001111111111111111111111); //Offset/number of lines of code to jump
-
+                sign =     (instr & 0b00000000010000000000000000000000) >> 22;
+                r_1 =      (instr & 0b00000000001111111111111111111111); //Offset/number of lines of code to jump
+                linkCode = (instr & 0b00000000100000000000000000000000) >> 23;
                 r_1 *= (sign == 1 ? -1 : 1);
                 params.add(r_1);
 
