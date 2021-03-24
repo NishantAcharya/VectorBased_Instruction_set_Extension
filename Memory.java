@@ -110,6 +110,11 @@ public class Memory {
         return data[tag][offset];
     }
 
+    public void writeCache(String callingFrom, int tag,int offset,int value) {
+         data[tag][offset] = value;
+    }
+
+
     public void printData() {
         for (int i = 0; i < data.length; i++) {
             int[] row = data[i];
