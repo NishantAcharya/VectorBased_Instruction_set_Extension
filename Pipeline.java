@@ -1,6 +1,4 @@
 import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class Pipeline implements NotifyAvailable {
 
@@ -12,6 +10,8 @@ public class Pipeline implements NotifyAvailable {
     private Cache cache;//Access to the cache and memory operations
     private Registers registers;
     private Memory RAM;
+
+    private Runnable completed;
 
     private ArrayList<Instruction> currInstructions;
 
@@ -41,8 +41,9 @@ public class Pipeline implements NotifyAvailable {
 
     int instrID = 0;
 
-    public void run(int programAddress) {
+    public void run(int programAddress, Runnable completed) {
         runningProgram = true;
+        this.completed = completed;
 
         // Pre-set variables to track instructions
         instrID = 0;
@@ -53,25 +54,26 @@ public class Pipeline implements NotifyAvailable {
         registers.set(15, programAddress);
 
         if (firstStageAvailable) {
-            int currID = instrID;
-            instrID++;
-
-            Instruction instr = new Instruction(currID);
-            firstStageAvailable = false;
-            currInstructions.add(instr);
-            stages[0].run(instr);
+            runNewInstruction();
         }
     }
 
     @Override
     public void nextStageAvailable() {
         if (runningProgram && instrID < endID) {
-            int currID = instrID;
-            instrID++;
-
-            stages[0].run(new Instruction(currID));
-            firstStageAvailable = false;
+            runNewInstruction();
         }
+    }
+
+    private void runNewInstruction() {
+        int currID = instrID;
+        instrID++;
+
+        Instruction instr = new Instruction(currID);
+        currInstructions.add(instr);
+
+        firstStageAvailable = false;
+        stages[0].run(instr);
     }
 
     //Need to add conditional elements to each instruction
@@ -132,7 +134,9 @@ public class Pipeline implements NotifyAvailable {
                 case "Decode":
                     instruction.decode();
 
-                    for (Instruction instr: currInstructions) {
+                    // Check if dependant on another instruction
+                    for (Object obj:  currInstructions.toArray()) {
+                        Instruction instr = (Instruction) obj;
                         if (instruction.id == instr.id) continue;
 
                         if (instruction.dependsOn(instr)) {
@@ -149,47 +153,38 @@ public class Pipeline implements NotifyAvailable {
                     switch (type) {
                         case 0: // Data Processing with 3 operands (rd = r1 + r2)
                             switch (opCode) {
-                                case 0:
+                                case 0: // Add
                                     int r_d = params.get(0);
                                     int r_1 = params.get(1);
                                     int r_2 = params.get(2);
 
                                     instruction.saveToWriteBack(r_d, registers.get(r_1) + registers.get(r_2), true);
                                     break;
-                                case 12:
-                                    r_1 = params.get(1);
-                                    r_2 = params.get(2);
+                                case 12: // Compare
+                                    r_1 = registers.get(params.get(1));
+                                    r_2 = registers.get(params.get(2));
 
-                                    int cond = params.get(3); //Getting condition code
-                                    if (r_1 < r_2){
-                                        params.add(4);
-                                    } else {
-                                        params.add(-1);
-                                    }
-
+                                    int cond = r_1 < r_2 ? 4 : -1;
+                                    registers.set(13, cond); // Set CSPR register
                                     break;
                             }
                             break;
                         case 3: // Data Processing with operand and immediate (rd = r1 + 3)
                             switch (opCode) {
-                                case 0:
+                                case 0: // Add
                                     int r_d = params.get(0);
                                     int r_1 = params.get(1);
                                     int imm = params.get(2);
 
                                     instruction.saveToWriteBack(r_d, registers.get(r_1) + imm, true);
                                     break;
-                                case 12:
-                                    r_1 = params.get(1);
+                                case 12: // Compare
+                                    r_1 = registers.get(params.get(1));
                                     imm = params.get(2);
 
-                                    int cond = params.get(3);//Getting condition code
-                                    if (r_1 < imm){
-                                        params.add(4);
-                                    } else {
-                                        params.add(-1);
-                                    }
-
+                                    int cond = r_1 < imm ? 4 : -1;
+                                    System.out.println(r_1 + " < " + imm + " CODE: " + cond);
+                                    registers.set(13, cond); // Set CSPR register
                                     break;
                             }
                             break;
@@ -235,12 +230,12 @@ public class Pipeline implements NotifyAvailable {
                         cache.processorWrite(avp.address, avp.value, name);
                     }
 
-                    if (instruction.isBranchingIstruction()) {
+                    if (instruction.isBranchingInstruction()) {
                         int cond = instruction.getCondCode();
 
                         if (registers.get(13) == cond) {
                             PC = registers.get(15);
-                            registers.set(15, PC + params.get(0));
+                            registers.set(15, PC + params.get(0) - 1);
                         }
                     }
 
@@ -249,9 +244,6 @@ public class Pipeline implements NotifyAvailable {
                 case "Write Back": {
                     for (Instruction.AddressValuePair avp: instruction.getAVPsToWriteBack(true))
                         registers.set(avp.address, avp.value);
-
-                    // Remove from curr instructions because all dependencies settled
-                    currInstructions.remove(instruction);
                     break;
                 }
             }
@@ -271,15 +263,14 @@ public class Pipeline implements NotifyAvailable {
             }
 
             if (dependsOnInstr != null) {
-                System.out.println("INSTR_" + instruction.id + ": Stalled until " + dependsOnInstr.id + " writes back");
+                System.out.println("INSTR_" + instruction.id + ": Stalled until INSTR_" + dependsOnInstr.id + " writes back");
                 stalled = true;
 
-                dependsOnInstr.addCallback("Write Back", new Runnable() {
-                    @Override
-                    public void run() {
-                        stalled = false;
-                        stageFinished();
-                    }
+                dependsOnInstr.addCallback("Write Back", () -> {
+                    System.out.println("INSTR_" + instruction.id + ": No longer stalled");
+
+                    stalled = false;
+                    stageFinished();
                 });
             } else {
                 stageFinished();
@@ -296,28 +287,32 @@ public class Pipeline implements NotifyAvailable {
                     runOnNextStage();
                 }
             } else {
+                currInstructions.remove(instruction);
+
                 // Last stage of pipeline
                 System.out.println("INSTR_" + instruction.id + ": Pipeline finished");
                 toNotify.nextStageAvailable();
+
+                if (instruction.id >= endID - 1)
+                    if (completed != null)
+                        completed.run();
             }
         }
 
         public void runOnNextStage() {
+            if (stalled) return;
+
             nextStageAvailable = false;
             Instruction instrForNextStage = instruction;
             instruction = null;
 
-            if (instrForNextStage.isBranchingIstruction() && name.equals("Fetch")) {
-                instrForNextStage.addCallback("Memory Access", new Runnable() {
-                    @Override
-                    public void run() {
-                        toNotify.nextStageAvailable();
-                    }
-                });
+            if (instrForNextStage.isBranchingInstruction() && name.equals("Fetch")) {
+                instrForNextStage.addCallback("Memory Access", () -> toNotify.nextStageAvailable());
             } else {
                 toNotify.nextStageAvailable();
             }
 
+            System.out.println("INS: " + instrForNextStage);
             new Thread(() -> nextStage.run(instrForNextStage)).start();
         }
 

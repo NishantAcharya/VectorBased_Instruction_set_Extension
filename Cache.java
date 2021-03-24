@@ -33,7 +33,7 @@ public class Cache extends Memory {
         }
 
         for (int i = 0; i < numLines; i++) {
-            tags[i] = 0;
+            tags[i] = -1;
             valid[i] = false;
             dirty[i] = false;
 
@@ -235,7 +235,10 @@ public class Cache extends Memory {
         }
         //Write to memory with dirty bit set to true
         else {
-            this.write("Cache",address,val);
+            int out = Memory.WAIT;
+
+            while (out == Memory.WAIT)
+                out = nextMemory.write("Cache", address, val);
         }
     }
 
