@@ -2,8 +2,8 @@ LOAD R0 0
 ADD R0 R0 1
 COMPARE R13 R0 5
 BRANCH -2 IF LT
-LOAD R1 2    # Load address 0 into R1
-STORE R1 R0    # Store value in R0(5) in address in R1
+LOAD R1 2          # Load address 0 into R1
+STORE R1 R0        # Store value in R0(5) in address in R1
 
 00000110110100000000000000000000
 00000011000000000000000000001000

@@ -133,7 +133,10 @@ public class Demo extends Application {
         RAM.printData(24000, 24004);
         System.out.println();
 
-        pipeline.run(24000, () -> RAM.printData(0, 3));
+        pipeline.run(24000, false, () -> {
+            System.out.println("\n-~-~- Program Completed -~-~-");
+            RAM.printData(0, 3);
+        });
     }
 
     // Loads instructions from file into RAM at programAddress

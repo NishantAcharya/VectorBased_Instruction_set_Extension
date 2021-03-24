@@ -6,6 +6,7 @@ public class Pipeline implements NotifyAvailable {
 
     private boolean firstStageAvailable = true;
     private boolean runningProgram = false;
+    private boolean usePipeline = true;
 
     private Cache cache;//Access to the cache and memory operations
     private Registers registers;
@@ -29,19 +30,20 @@ public class Pipeline implements NotifyAvailable {
         Stage stage2 = new Stage("Decode", stage3);
         Stage stage1 = new Stage("Fetch", stage2);
 
-        // Allows stage to notify previous stage when it is available
-        stage5.setToNotify(stage4);
-        stage4.setToNotify(stage3);
-        stage3.setToNotify(stage2);
-        stage2.setToNotify(stage1);
-        stage1.setToNotify(this);
-
         stages = new Stage[] { stage1, stage2, stage3, stage4, stage5 };
     }
 
     int instrID = 0;
 
-    public void run(int programAddress, Runnable completed) {
+    public void run(int programAddress, boolean usePipeline, Runnable completed) {
+        this.usePipeline = usePipeline;
+
+        stages[0].setToNotify(usePipeline ? this : null);
+        stages[1].setToNotify(usePipeline ? stages[0] : null);
+        stages[2].setToNotify(usePipeline ? stages[1] : null);
+        stages[3].setToNotify(usePipeline ? stages[2] : null);
+        stages[4].setToNotify(usePipeline ? stages[3] : this);
+
         runningProgram = true;
         this.completed = completed;
 
@@ -283,7 +285,7 @@ public class Pipeline implements NotifyAvailable {
 
             // Wait for next stage to be available
             if (nextStage != null) {
-                if (nextStageAvailable) {
+                if (nextStageAvailable || !usePipeline) {
                     runOnNextStage();
                 }
             } else {
@@ -291,7 +293,7 @@ public class Pipeline implements NotifyAvailable {
 
                 // Last stage of pipeline
                 System.out.println("INSTR_" + instruction.id + ": Pipeline finished");
-                toNotify.nextStageAvailable();
+                notifyLastStage();
 
                 if (instruction.id >= endID - 1)
                     if (completed != null)
@@ -307,12 +309,17 @@ public class Pipeline implements NotifyAvailable {
             instruction = null;
 
             if (instrForNextStage.isBranchingInstruction() && name.equals("Fetch")) {
-                instrForNextStage.addCallback("Memory Access", () -> toNotify.nextStageAvailable());
+                instrForNextStage.addCallback("Memory Access", () -> notifyLastStage());
             } else {
-                toNotify.nextStageAvailable();
+                notifyLastStage();
             }
 
             new Thread(() -> nextStage.run(instrForNextStage)).start();
+        }
+
+        private void notifyLastStage() {
+            if (toNotify != null)
+                toNotify.nextStageAvailable();
         }
 
         public void setToNotify(NotifyAvailable na) {
