@@ -51,7 +51,9 @@ public class Demo extends Application {
                             int row = this.getTableRow().getIndex();
 
                             String label = row + "";
-                            if (row >= 14) label = row == 14 ? "LR" : "PC";
+                            if (row == 13) label = "CD";
+                            else if (row == 14) label = "LR";
+                            else if (row == 15) label = "PC";
 
                             setText(label);
                         }
@@ -124,15 +126,17 @@ public class Demo extends Application {
     // Load demo instructions and run them in pipeline
     public void runInstructions() {
         try {
-            loadInstructions(24000, "demo1.txt");
+            loadInstructions(24000, "loop_demo.txt");
         } catch (IOException e) { return; }
 
         System.out.println("LOADED PROGRAM INTO MEMORY");
         RAM.printData(24000, 24004);
         System.out.println();
 
-
-        pipeline.run(24000);
+        pipeline.run(24000, false, () -> {
+            System.out.println("\n-~-~- Program Completed -~-~-");
+            RAM.printData(0, 3);
+        });
     }
 
     // Loads instructions from file into RAM at programAddress

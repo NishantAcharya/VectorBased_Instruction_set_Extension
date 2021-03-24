@@ -54,6 +54,9 @@ public class Instruction {
             if (!other.stagesDone.contains("Write Back") && other.stallRegisters.contains(reg))
                 return true;
 
+        if (isBranchingInstruction() && other.getOpCode() == 12)
+            return true;
+
         return false;
     }
 
@@ -75,7 +78,7 @@ public class Instruction {
         this.binaryValue = Long.toBinaryString( Integer.toUnsignedLong(instr) | 0x100000000L).substring(1);
     }
 
-    public boolean isBranchingIstruction() {
+    public boolean isBranchingInstruction() {
         try {
             int instr = Integer.parseInt(binaryValue, 2);
             return (instr & 0b00001111000000000000000000000000) >> 24 == 7;
@@ -85,7 +88,10 @@ public class Instruction {
     }
 
     public void addCallback(String stage, Runnable r) {
-        callbacks.put(stage, r);
+        if (stagesDone.contains(stage))
+            r.run();
+        else
+            callbacks.put(stage, r);
     }
 
     public void runCallbacks(String stage) {
@@ -180,9 +186,12 @@ public class Instruction {
                 params.add(r_d);
                 params.add(r_1);
 
+                dependsOnRegisters.add(r_1);
+
                 if (opCode == 13) {
                     stallRegisters.add(r_d);
-                    dependsOnRegisters.add(r_1);
+                } else {
+                    dependsOnRegisters.add(r_d);
                 }
 
                 this.strValue = opMap.get(opCode) + " R" + r_d + " R" + r_1;
@@ -196,6 +205,8 @@ public class Instruction {
 
                 if (opCode == 13)
                     stallRegisters.add(r_d);
+                else
+                    dependsOnRegisters.add(r_d);
 
                 this.strValue = opMap.get(opCode) + " R" + r_d + " " + imm;
                 break;
@@ -259,6 +270,10 @@ public class Instruction {
 
     public int getCondCode() {
         return condCode;
+    }
+
+    public void setCondCode(int condCode) {
+        this.condCode = condCode;
     }
 
     public class AddressValuePair {

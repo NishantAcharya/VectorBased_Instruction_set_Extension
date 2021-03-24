@@ -1,6 +1,0 @@
-LOAD R0 0
-ADD R0 R0 1
-COMPARE R13 R0 5
-BRANCH -2 IF LT
-LOAD R1 0    # Load address 0 into R1
-STORE R1 R0    # Store value in R0(5) in address in R1
