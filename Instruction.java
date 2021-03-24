@@ -6,6 +6,9 @@ public class Instruction {
     public static final int HALT = 0b00001111000000000000000000000000;
 
     private HashMap<Integer, String> opMap;
+    private HashMap<Integer, String> condMap;
+    private HashMap<String, Runnable> callbacks;
+
     private String binaryValue;
     private String strValue;
     private int type;
@@ -23,11 +26,41 @@ public class Instruction {
         this.stagesDone = new ArrayList<>();
         this.params = new ArrayList<>();
 
+        this.callbacks = new HashMap<>();
+        callbacks.put("Fetch", null);
+        callbacks.put("Decode", null);
+        callbacks.put("Execute", null);
+        callbacks.put("Memory Access", null);
+        callbacks.put("Write Back", null);
+
         this.buildOpMap();
+        this.buildCondMap();
     }
 
     public void instructionToBinaryString(int instr) {
         this.binaryValue = Long.toBinaryString( Integer.toUnsignedLong(instr) | 0x100000000L).substring(1);
+    }
+
+    public boolean isBranchingIstruction() {
+        try {
+            int instr = Integer.parseInt(binaryValue, 2);
+            return (instr & 0b00001111000000000000000000000000) >> 24 == 7;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public void addCallback(String stage, Runnable r) {
+        callbacks.put(stage, r);
+    }
+
+    public void runCallbacks(String stage) {
+        Runnable r = callbacks.get(stage);
+
+        if (r != null) {
+            callbacks.put(stage, null);
+            r.run();
+        }
     }
 
     public int getOffset(){
@@ -108,6 +141,8 @@ public class Instruction {
                 r_1 = (instr & 0b00000000011111111111111111111111);//Offset/number of lines of code to jump
                 params.add(r_d);
                 params.add(r_1);
+
+                strValue = "BRANCH " + r_1 + " IF " + condMap.get(r_d);
                 break;
             default:
                 this.strValue = "INVALID TYPE";
@@ -141,6 +176,19 @@ public class Instruction {
         opMap.put(11, "SWAP");
         opMap.put(13, "LOAD");
         opMap.put(14, "STORE");
-        opMap.put(15, "BRANCH");
+        opMap.put(7, "BRANCH");
+    }
+
+    private void buildCondMap() {
+        condMap = new HashMap<>();
+        condMap.put(0, "EQ");
+        condMap.put(1, "NE");
+        condMap.put(2, "GT");
+        condMap.put(4, "LT");
+        condMap.put(8, "CARRY OUT");
+        condMap.put(3, "ZERO");
+        condMap.put(5, "NON-ZERO");
+        condMap.put(6, "TRANSPOSE");
+        condMap.put(7, "NO COND");
     }
 }

@@ -45,7 +45,7 @@ public class Pipeline implements NotifyAvailable {
 
         // Pre-set variables to track instructions
         instrID = 0;
-        endID = Integer.MAX_VALUE;
+        endID = 20;//Integer.MAX_VALUE;
 
         // Set PC to address of program
         registers.set(15, programAddress);
@@ -116,7 +116,6 @@ public class Pipeline implements NotifyAvailable {
                     if (instruction.checkIfHalt(out)) // Check if halt instruction
                         break;
 
-
                     instruction.instructionToBinaryString(out);
                     instruction.addStage(name);
 
@@ -146,8 +145,7 @@ public class Pipeline implements NotifyAvailable {
                                     int cond = params.get(3);//Getting condition code
                                     if (r_1 < r_2){
                                         params.add(4);
-                                    }
-                                    else{
+                                    } else {
                                         params.add(-1);
                                     }
 
@@ -225,13 +223,11 @@ public class Pipeline implements NotifyAvailable {
                                 case 3:
                                     break;
                                 case 4:
-                                    if(4 == registers.get(13)){
+                                    if (4 == registers.get(13)){
                                         PC = registers.get(15);
                                         registers.set(14,PC-2);
                                         registers.set(15, PC + params.get(1));
-
-                                    }
-                                    else{
+                                    } else{
                                         PC = registers.get(15);
                                         registers.set(14,PC-3);
                                     }
@@ -284,6 +280,9 @@ public class Pipeline implements NotifyAvailable {
             instruction.addStage(name);
             finishedRun = true;
 
+            // Checks if there are any callbacks associated with current stage
+            instruction.runCallbacks(name);
+
             if (instruction.toString().equals("HALT")) {
                 System.out.println("Reached HALT Instruction (INSTR_" + instruction.id + ")");
                 endID = instruction.id;
@@ -312,7 +311,18 @@ public class Pipeline implements NotifyAvailable {
             Instruction instrForNextStage = instruction;
             instruction = null;
 
-            toNotify.nextStageAvailable();
+            if (instrForNextStage.isBranchingIstruction() && name.equals("Fetch")) {
+                instrForNextStage.addCallback("Memory Access", new Runnable() {
+                    @Override
+                    public void run() {
+                        System.out.println("RUNNING RUNNABLE FROM STAGE " + name);
+                        toNotify.nextStageAvailable();
+                    }
+                });
+            } else {
+                toNotify.nextStageAvailable();
+            }
+
             new Thread(() -> nextStage.run(instrForNextStage)).start();
         }
 
