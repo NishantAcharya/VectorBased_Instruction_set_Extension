@@ -114,6 +114,9 @@ public class Memory {
          data[tag][offset] = value;
     }
 
+    //for demo
+    public int[] readLineDemo(int tag){return data[tag];}
+
 
     public void printData() {
         for (int i = 0; i < data.length; i++) {

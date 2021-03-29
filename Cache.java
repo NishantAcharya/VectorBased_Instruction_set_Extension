@@ -232,6 +232,10 @@ public class Cache extends Memory {
 
             this.writeSingleValueInCache(tagLoc, address % 4, val);
             dirty[tagLoc] = true;
+            //for demo
+            int[] line = readLineDemo(tagLoc);
+            lineData.set(tagLoc, new LineData(0, tag, line[0], line[1], line[2], line[3]));
+            lineData.get(tagLoc).v.set(1);
         }
         //Write to memory with dirty bit set to true
         else {
@@ -241,6 +245,7 @@ public class Cache extends Memory {
                 out = nextMemory.write("Cache", address, val);
         }
     }
+
 
     // Holds cache line data to display in table
     public class LineData {

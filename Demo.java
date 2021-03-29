@@ -111,7 +111,7 @@ public class Demo extends Application {
 
         stage.setScene(scene);
         stage.show();
-
+        cache.directWrite(0,new int[]{100,20,10,11},0,"Demo",true);
        runInstructions();
 
     }
@@ -125,12 +125,13 @@ public class Demo extends Application {
 
     // Load demo instructions and run them in pipeline
     public void runInstructions() {
+
         try {
-            loadInstructions(24000, "demo1.txt");
+            loadInstructions(24000, "loop_demo.txt");
         } catch (IOException e) { return; }
 
         System.out.println("LOADED PROGRAM INTO MEMORY");
-        RAM.printData(24000, 24004);
+        RAM.printData(24000, 24008);
         System.out.println();
 
         pipeline.run(24000, true, () -> {
