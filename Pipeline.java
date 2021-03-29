@@ -53,7 +53,7 @@ public class Pipeline implements NotifyAvailable {
         currInstructions = new ArrayList<>();
 
         // Set PC to address of program
-        registers.set(15, programAddress);
+        registers.setPC(programAddress);
 
         if (firstStageAvailable) {
             runNewInstruction();
@@ -118,7 +118,7 @@ public class Pipeline implements NotifyAvailable {
             switch (name) {
                 case "Fetch":
                     int out = Memory.WAIT;
-                    int PC = registers.get(15);
+                    int PC = registers.getPC();
 
                     // Gets instruction in memory from address in PC
                     while (out == Memory.WAIT) {
@@ -131,7 +131,7 @@ public class Pipeline implements NotifyAvailable {
                     instruction.instructionToBinaryString(out);
                     instruction.addStage(name);
 
-                    registers.set(15, PC + 1);
+                    registers.setPC(PC + 1);
                     break;
                 case "Decode":
                     instruction.decode();
@@ -168,12 +168,9 @@ public class Pipeline implements NotifyAvailable {
                                     r_1 = registers.get(params.get(1));
                                     r_2 = registers.get(params.get(2));
 
-                                    int cond = 4;
-                                    if( r_1 < r_2){
-                                        cond = -1;
-                                    }
+                                    int cmp = compare(r_1, r_2);
                                     //Add more conditions
-                                    instruction.saveToWriteBack(13, cond, true);
+                                    instruction.saveToWriteBack(13, cmp, true);
                                     break;
                             }
                             break;
@@ -190,8 +187,8 @@ public class Pipeline implements NotifyAvailable {
                                     r_1 = registers.get(params.get(1));
                                     imm = params.get(2);
 
-                                    int cond = r_1 < imm ? 4 : -1;
-                                    instruction.saveToWriteBack(13, cond, true);
+                                    int cmp = compare(r_1, imm);
+                                    instruction.saveToWriteBack(13, cmp, true);
                                     break;
                             }
                             break;
@@ -239,18 +236,15 @@ public class Pipeline implements NotifyAvailable {
 
                     if (instruction.isBranchingInstruction()) {
                         int cond = instruction.getCondCode();
-                    if(cond != 7) {
-                        if (registers.get(13) == cond) {
-                            PC = registers.get(15);
-                            registers.set(15, PC + params.get(0) - 1);
-                        } else {
-                            PC = registers.get(15);
-                            registers.set(14, PC - 2); //Going back to compare
-                        }
-                    }
-                    else{//looping back
-                         int lr = registers.get(14);
-                         registers.set(15,lr);
+                        if(cond != 7) {
+                            // If true, branch to PC, else do nothing
+                            if (instruction.checkCond(registers.getCND())) {
+                                PC = registers.get(15);
+                                registers.setPC(PC + params.get(0) - 1);
+                            }
+                        } else { //looping back
+                             int lr = registers.getLR();
+                             registers.setPC(lr);
                         }
                     }
 
@@ -345,6 +339,19 @@ public class Pipeline implements NotifyAvailable {
             if (instruction != null && finishedRun && !stalled) {
                 runOnNextStage();
             }
+        }
+
+        private int compare(int a, int b) {
+            String binStr = "";
+
+            binStr = (a == b ? "1" : "0") + binStr; // EQ
+            binStr = (a != b ? "1" : "0") + binStr; // NE
+            binStr = (a > b ? "1" : "0") + binStr;  // GT
+            binStr = (a >= b ? "1" : "0") + binStr; // GTE
+            binStr = (a < b ? "1" : "0") + binStr;  // LT
+            binStr = (a <= b ? "1" : "0") + binStr; // LTE
+
+            return Integer.parseInt(binStr, 2);
         }
     }
 }

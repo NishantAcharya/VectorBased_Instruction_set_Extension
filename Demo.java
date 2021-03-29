@@ -126,7 +126,7 @@ public class Demo extends Application {
     // Load demo instructions and run them in pipeline
     public void runInstructions() {
         try {
-            loadInstructions(24000, "demo1.txt");
+            loadInstructions(24000, "loop_demo.txt");
         } catch (IOException e) { return; }
 
         System.out.println("LOADED PROGRAM INTO MEMORY");
