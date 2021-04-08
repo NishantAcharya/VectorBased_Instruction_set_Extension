@@ -164,6 +164,38 @@ public class Instruction {
 
                 this.strValue = opMap.get(opCode) + (opCode == 12 ? "" : " R" + r_d) + " R" + r_1 + " R" + r_2;
                 break;
+            case 1:// Data Processing Register Indirect(both) with 3 operands (rd = ValueAt(r1) + ValueAt(r2))
+                r_d = (instr & 0b00000000000001111000000000000000) >> 15;
+                r_1 = (instr & 0b00000000000000000111100000000000) >> 11;
+                r_2 = (instr & 0b00000000000000000000011110000000) >> 7;
+                condCode = (instr & 0b11110000000000000000000000000000) >> 28;
+
+                params.add(r_d);
+                params.add(r_1);
+                params.add(r_2);
+
+                stallRegisters.add(r_d);
+                dependsOnRegisters.add(r_1);
+                dependsOnRegisters.add(r_2);
+
+                this.strValue = opMap.get(opCode) + (opCode == 12 ? "" : " R" + r_d) + " ValAt(R" + r_1 + ") ValAt(R" + r_2+")";
+                break;
+            case 2://Data Processing Register Indirect(one) with 3 operands (rd = ValueAt(r1) + r2)
+                r_d = (instr & 0b00000000000001111000000000000000) >> 15;
+                r_1 = (instr & 0b00000000000000000111100000000000) >> 11;
+                r_2 = (instr & 0b00000000000000000000011110000000) >> 7;
+                condCode = (instr & 0b11110000000000000000000000000000) >> 28;
+
+                params.add(r_d);
+                params.add(r_1);
+                params.add(r_2);
+
+                stallRegisters.add(r_d);
+                dependsOnRegisters.add(r_1);
+                dependsOnRegisters.add(r_2);
+
+                this.strValue = opMap.get(opCode) + (opCode == 12 ? "" : " R" + r_d) + " ValAt(R" + r_1 + ") R" + r_2;
+                break;
             case 3: // Data Processing with operand and immediate (rd = r1 + 3)
                 r_d = (instr & 0b00000000000001111000000000000000) >> 15;
                 r_1 = (instr & 0b00000000000000000111100000000000) >> 11;
@@ -178,6 +210,21 @@ public class Instruction {
                 dependsOnRegisters.add(r_1);
 
                 this.strValue = opMap.get(opCode) + (opCode == 12 ? "" : " R" + r_d) + " R" + r_1 + " " + imm;
+                break;
+            case 4:// Data processing Indirect with 2 operands and an immediate (rd = ValueAt(r1) + 3)
+                r_d = (instr & 0b00000000000001111000000000000000) >> 15;
+                r_1 = (instr & 0b00000000000000000111100000000000) >> 11;
+                imm = (instr & 0b00000000000000000000011111111000) >> 3;
+                condCode = (instr & 0b11110000000000000000000000000000) >> 28;
+
+                params.add(r_d);
+                params.add(r_1);
+                params.add(imm);
+
+                stallRegisters.add(r_d);
+                dependsOnRegisters.add(r_1);
+
+                this.strValue = opMap.get(opCode) + (opCode == 12 ? "" : " R" + r_d) + " ValAt(R" + r_1 + ") " + imm;
                 break;
             case 5: // Load/Store
                 r_d = (instr & 0b00000000000001111000000000000000) >> 15;
