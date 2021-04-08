@@ -162,7 +162,7 @@ public class Instruction {
                 dependsOnRegisters.add(r_1);
                 dependsOnRegisters.add(r_2);
 
-                this.strValue = opMap.get(opCode) + " R" + r_d + " R" + r_1 + " R" + r_2;
+                this.strValue = opMap.get(opCode) + (opCode == 12 ? "" : " R" + r_d) + " R" + r_1 + " R" + r_2;
                 break;
             case 3: // Data Processing with operand and immediate (rd = r1 + 3)
                 r_d = (instr & 0b00000000000001111000000000000000) >> 15;
@@ -177,7 +177,7 @@ public class Instruction {
                 stallRegisters.add(r_d);
                 dependsOnRegisters.add(r_1);
 
-                this.strValue = opMap.get(opCode) + " R" + r_d + " R" + r_1 + " " + imm;
+                this.strValue = opMap.get(opCode) + (opCode == 12 ? "" : " R" + r_d) + " R" + r_1 + " " + imm;
                 break;
             case 5: // Load/Store
                 r_d = (instr & 0b00000000000001111000000000000000) >> 15;
@@ -260,12 +260,13 @@ public class Instruction {
         condMap.put(0, "EQ");
         condMap.put(1, "NE");
         condMap.put(2, "GT");
+        condMap.put(3, "GTE");
         condMap.put(4, "LT");
-        condMap.put(8, "CARRY OUT");
-        condMap.put(3, "ZERO");
-        condMap.put(5, "NON-ZERO");
-        condMap.put(6, "TRANSPOSE");
-        condMap.put(7, "NO COND");
+        condMap.put(5, "LTE");
+    }
+
+    public boolean checkCond(int cmp) {
+        return ((cmp >> condCode) & 1) == 1;
     }
 
     public int getCondCode() {

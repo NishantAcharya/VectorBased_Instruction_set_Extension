@@ -28,6 +28,29 @@ public class Registers {
         registerData.get(register).set(value);
     }
 
+    public int getCND() {
+        return get(13);
+    }
+
+    public void setCND(int cnd) {
+        set(13, cnd);
+    }
+    public int getLR() {
+        return get(14);
+    }
+
+    public void setLR(int lr) {
+        set(14, lr);
+    }
+
+    public int getPC() {
+        return get(15);
+    }
+
+    public void setPC(int pc) {
+        set(15, pc);
+    }
+
     public int get(int register) {
        return data[register];
     }
