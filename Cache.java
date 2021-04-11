@@ -77,7 +77,9 @@ public class Cache extends Memory {
 
             if (lru[set][tagLoc%4] != 0) {
                 for (int i = 0; i < lru[set].length; i++) { // Update LRU (0 for nextLoc, +1 for everything else)
-                    lru[set][i] = (tagLoc%4 == i) ? 0 : ((tags[i+ (set*4)] == 0 && !valid[i+(set*4)]) ? -1 : lru[set][i] + 1);
+                    if(lru[set][i] != -1) {
+                        lru[set][i] = (tagLoc % 4 == i) ? 0 : ((tags[i + (set * 4)] == 0 && !valid[i + (set * 4)]) ? -1 : lru[set][i] + 1);
+                    }
                     lineData.get(i+(set*4)).setLru(lru[set][i]);
                 }
             }
@@ -141,7 +143,9 @@ public class Cache extends Memory {
         lineData.get(nextLoc).setDirty(isDirty ? 1 : 0);
 
         for (int i = 0; i < lru[set].length; i++) { // Update LRU (0 for nextLoc, +1 for everything else)
-            lru[set][i] = (nextLoc%4 == i) ? 0 : ((tags[i+ (set*4)] == 0 && !valid[i+(set*4)]) ? -1 : lru[set][i] + 1);
+            if(lru[set][i] != -1) {
+                lru[set][i] = (nextLoc % 4 == i) ? 0 : ((tags[i + (set * 4)] == 0 && !valid[i + (set * 4)]) ? -1 : lru[set][i] + 1);
+            }
             lineData.get(i+(set*4)).setLru(lru[set][i]);
         }
 
