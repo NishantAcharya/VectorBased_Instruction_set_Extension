@@ -129,7 +129,7 @@ public class Demo extends Application {
     public void runInstructions() {
 
         try {
-            loadInstructions(24000, "loop_demo.txt");
+            loadInstructionsStr(24000, "loop_demo_txt.txt");
         } catch (IOException e) { return; }
 
         System.out.println("LOADED PROGRAM INTO MEMORY");
@@ -142,8 +142,31 @@ public class Demo extends Application {
         });
     }
 
+    public void loadInstructionsStr(int programAddress, String fileName) throws IOException {
+        int addr = programAddress;
+
+        try(BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            for(String line; (line = br.readLine()) != null; ) {
+                int instr = Assembler.toBinary(line);
+                int out = Memory.WAIT;
+
+                while (out == Memory.WAIT) {
+                    out = RAM.write("Main", addr, instr);
+                }
+
+                addr += 1;
+            }
+        }
+
+        // Write END (-1) after program
+        int out = Memory.WAIT;
+        while (out == Memory.WAIT) {
+            out = RAM.write("Main", addr, Instruction.HALT);
+        }
+    }
+
     // Loads instructions from file into RAM at programAddress
-    public void loadInstructions(int programAddress, String fileName) throws IOException {
+    public void loadInstructionsBinary(int programAddress, String fileName) throws IOException {
         int addr = programAddress;
 
         try(BufferedReader br = new BufferedReader(new FileReader(fileName))) {
@@ -165,4 +188,5 @@ public class Demo extends Application {
             out = RAM.write("Main", addr, Instruction.HALT);
         }
     }
+
 }
