@@ -222,13 +222,13 @@ public class Pipeline implements NotifyAvailable {
                                     int r_1 = params.get(1);
                                     int r_2 = params.get(2);
 
-                                    instruction.saveToMemAccess(registers.get(r_1),registers.get(r_2),r_d);
+                                    instruction.saveToMemAccess(registers.get(r_1),registers.get(r_2),r_d,opCode);
                                     break;
                                 case 12: // Compare
                                     r_1 = registers.get(params.get(1));
                                     r_2 = registers.get(params.get(2));
 
-                                    instruction.saveToMemAccess(registers.get(r_1),registers.get(r_2),13);
+                                    instruction.saveToMemAccess(registers.get(r_1),registers.get(r_2),13,opCode);
                                     break;
                                 default:
                                     System.out.println("Invalid OPcode: "+opCode);
@@ -250,13 +250,13 @@ public class Pipeline implements NotifyAvailable {
                                     int r_1 = params.get(1);
                                     int r_2 = params.get(2);
 
-                                    instruction.saveToMemAccess(registers.get(r_1),r_2,r_d);
+                                    instruction.saveToMemAccess(registers.get(r_1),r_2,r_d,opCode);
                                     break;
                                 case 12: // Compare
                                     r_1 = registers.get(params.get(1));
                                     r_2 = registers.get(params.get(2));
 
-                                    instruction.saveToMemAccess(registers.get(r_1),r_2,13);
+                                    instruction.saveToMemAccess(registers.get(r_1),r_2,13,opCode);
                                     break;
                                 default:
                                     System.out.println("Invalid OPcode: "+opCode);
