@@ -226,7 +226,7 @@ public class Instruction {
 
                 this.strValue = opMap.get(opCode) + (opCode == 12 ? "" : " R" + r_d) + " ValAt(R" + r_1 + ") " + imm;
                 break;
-            case 5: // Load/Store
+            case 5: // Load/Store (Load value from address into rd / store value in r1 at address in rd)
                 r_d = (instr & 0b00000000000001111000000000000000) >> 15;
                 r_1 = (instr  & 0b0000000000000000111100000000000) >> 11;
 
@@ -243,7 +243,7 @@ public class Instruction {
 
                 this.strValue = opMap.get(opCode) + " R" + r_d + " R" + r_1;
                 break;
-            case 6: // Load/Store immediate
+            case 6: // Load/Store immediate (Load 3 into register rd / Store 3 into the address in rd)
                 r_d = (instr & 0b00000000000001111000000000000000) >> 15;
                 imm = (instr  & 0b00000000000000000111111111111000) >> 3;
 
@@ -257,7 +257,7 @@ public class Instruction {
 
                 this.strValue = opMap.get(opCode) + " R" + r_d + " " + imm;
                 break;
-            case 7:
+            case 7://Branch Instruction
                 condCode = (instr & 0b11110000000000000000000000000000) >> 28; //Condition
                 sign =     (instr & 0b00000000010000000000000000000000) >> 22;
                 r_1 =      (instr & 0b00000000001111111111111111111111); //Offset/number of lines of code to jump
@@ -266,6 +266,54 @@ public class Instruction {
                 params.add(r_1);
 
                 strValue = "BRANCH " + r_1 + " IF " + condMap.get(condCode);
+                break;
+            case 8: // Vector Load/Store Load vector from address into rd / store vector in rd into address)
+                r_d = (instr & 0b00000000000001111000000000000000) >> 15;
+                r_1 = (instr  & 0b0000000000000000111100000000000) >> 11;
+
+                params.add(r_d);
+                params.add(r_1);
+
+                dependsOnRegisters.add(r_1);
+
+                if (opCode == 13) {
+                    stallRegisters.add(r_d);
+                } else {
+                    dependsOnRegisters.add(r_d);
+                }
+
+                this.strValue = opMap.get(opCode) + " V" + r_d + " V" + r_1;
+                break;
+            case 9: // Vector Data Processing with 3 operands (Vd = V1 + V2)
+                r_d = (instr & 0b00000000000001111000000000000000) >> 15;
+                r_1 = (instr & 0b00000000000000000111100000000000) >> 11;
+                r_2 = (instr & 0b00000000000000000000011110000000) >> 7;
+                condCode = (instr & 0b11110000000000000000000000000000) >> 28;
+
+                params.add(r_d);
+                params.add(r_1);
+                params.add(r_2);
+
+                stallRegisters.add(r_d);
+                dependsOnRegisters.add(r_1);
+                dependsOnRegisters.add(r_2);
+
+                this.strValue = opMap.get(opCode) + (opCode == 12 ? "" : " V" + r_d) + " V" + r_1 + " V" + r_2;
+                break;
+            case 11: // Data Processing with operand and immediate (rd = r1 + 3)
+                r_d = (instr & 0b00000000000001111000000000000000) >> 15;
+                r_1 = (instr & 0b00000000000000000111100000000000) >> 11;
+                imm = (instr & 0b00000000000000000000011111111000) >> 3;
+                condCode = (instr & 0b11110000000000000000000000000000) >> 28;
+
+                params.add(r_d);
+                params.add(r_1);
+                params.add(imm);
+
+                stallRegisters.add(r_d);
+                dependsOnRegisters.add(r_1);
+
+                this.strValue = opMap.get(opCode) + (opCode == 12 ? "" : " V" + r_d) + " V" + r_1 + " " + imm;
                 break;
             default:
                 this.strValue = "INVALID TYPE";
