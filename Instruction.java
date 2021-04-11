@@ -18,6 +18,7 @@ public class Instruction {
     private int opCode;
     private int condCode;
     private int linkCode = -1; //Setting the link code to an invalid value
+    private int vectorLength = -1;
     private final ArrayList<Integer> params;
     private final ArrayList<String> stagesDone;
     private int offset; // for branching, the number of lines to skip on branching
@@ -102,6 +103,9 @@ public class Instruction {
             r.run();
         }
     }
+
+    public int getVectorLength(){return this.vectorLength;}
+
     public int getHalt(){return this.linkCode;}
 
     public int getOffset(){
@@ -270,9 +274,11 @@ public class Instruction {
             case 8: // Vector Load/Store Load vector from address into rd / store vector in rd into address)
                 r_d = (instr & 0b00000000000001111000000000000000) >> 15;
                 r_1 = (instr  & 0b0000000000000000111100000000000) >> 11;
+                vectorLength = (instr  & 0b0000000000000000000011111000000) >> 6;
 
                 params.add(r_d);
                 params.add(r_1);
+
 
                 dependsOnRegisters.add(r_1);
 
@@ -289,6 +295,7 @@ public class Instruction {
                 r_1 = (instr & 0b00000000000000000111100000000000) >> 11;
                 r_2 = (instr & 0b00000000000000000000011110000000) >> 7;
                 condCode = (instr & 0b11110000000000000000000000000000) >> 28;
+                vectorLength = (instr & 0b00000000000000000000000001111100) >> 2;
 
                 params.add(r_d);
                 params.add(r_1);
@@ -303,8 +310,9 @@ public class Instruction {
             case 11: // Data Processing with operand and immediate (rd = r1 + 3)
                 r_d = (instr & 0b00000000000001111000000000000000) >> 15;
                 r_1 = (instr & 0b00000000000000000111100000000000) >> 11;
-                imm = (instr & 0b00000000000000000000011111111000) >> 3;
-                condCode = (instr & 0b11110000000000000000000000000000) >> 28;
+                imm = (instr & 0b00000000000000000000011111100000) >> 5;
+                condCode =     (instr & 0b11110000000000000000000000000000) >> 28;
+                vectorLength = (instr & 0b00000000000000000000000000011111);
 
                 params.add(r_d);
                 params.add(r_1);

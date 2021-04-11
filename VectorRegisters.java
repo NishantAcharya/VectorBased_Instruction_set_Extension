@@ -5,7 +5,7 @@ public class VectorRegisters {
     public VectorRegisters(int size, int vectorSize){
         data = new int[size][vectorSize];
 
-        //Need to set up observale list of arrays for the UI
+        //Need to set up observable list of arrays for the UI
     }
 
     public void set(int register, int[] value){
