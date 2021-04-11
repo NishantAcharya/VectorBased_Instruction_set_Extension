@@ -11,6 +11,7 @@ public class Instruction {
 
     private final ArrayList<AddressValuePair> writebackRegisters;
     private final ArrayList<AddressValuePair> writebackMem;
+    private ArrayList<AddressPair> memoryAccessRegisters;
 
     private String binaryValue;
     private String strValue;
@@ -59,6 +60,15 @@ public class Instruction {
             return true;
 
         return false;
+    }
+
+    public void saveToMemAccess(int add_1,int add_2){
+        AddressPair ap = new AddressPair(add_1,add_2);
+        memoryAccessRegisters.add(ap);
+    }
+
+    public ArrayList<AddressPair> getAPstoMemAccess(){
+        return memoryAccessRegisters;
     }
 
     public void saveToWriteBack(int address, int value, boolean inRegister) {
@@ -386,6 +396,15 @@ public class Instruction {
         public AddressValuePair(int address, int value) {
             this.address = address;
             this.value = value;
+        }
+    }
+
+    public class AddressPair{
+        int address_1,address_2;
+
+        public AddressPair(int address_1,int address_2){
+            this.address_1 = address_1;
+            this.address_2 = address_2;
         }
     }
 }
