@@ -10,6 +10,7 @@ public class Pipeline implements NotifyAvailable {
 
     private Cache cache;//Access to the cache and memory operations
     private Registers registers;
+    private VectorRegisters vectorRegisters;
     private Memory RAM;
 
     private Runnable completed;
@@ -18,9 +19,10 @@ public class Pipeline implements NotifyAvailable {
 
     private int endID = Integer.MAX_VALUE;
 
-    public Pipeline(Registers registers, Cache cache, Memory RAM) {
+    public Pipeline(Registers registers, VectorRegisters vectorRegisters, Cache cache, Memory RAM) {
         this.cache = cache;
         this.registers = registers;
+        this.vectorRegisters = vectorRegisters;
         this.RAM = RAM;
 
         // Replace this with actual stage classes once built
@@ -164,6 +166,34 @@ public class Pipeline implements NotifyAvailable {
 
                                     instruction.saveToWriteBack(r_d, registers.get(r_1) + registers.get(r_2), true);
                                     break;
+                                case 1: // Subtract
+                                    r_d = params.get(0);
+                                    r_1 = params.get(1);
+                                    r_2 = params.get(2);
+
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) - registers.get(r_2), true);
+                                    break;
+                                case 2: // Multiply
+                                    r_d = params.get(0);
+                                    r_1 = params.get(1);
+                                    r_2 = params.get(2);
+
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) * registers.get(r_2), true);
+                                    break;
+                                case 4: // Divide(Not the processor's job to catch the dividing by zero error)
+                                    r_d = params.get(0);
+                                    r_1 = params.get(1);
+                                    r_2 = params.get(2);
+
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) / registers.get(r_2), true);
+                                    break;
+                                case 8: // Modulo(Not the processor's job to catch the dividing by zero error)
+                                    r_d = params.get(0);
+                                    r_1 = params.get(1);
+                                    r_2 = params.get(2);
+
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) % registers.get(r_2), true);
+                                    break;
                                 case 12: // Compare
                                     r_1 = registers.get(params.get(1));
                                     r_2 = registers.get(params.get(2));
@@ -174,6 +204,55 @@ public class Pipeline implements NotifyAvailable {
                                     break;
                             }
                             break;
+                        case 1://Data Processing Register Indirect(both) with 3 operands (rd = ValueAt(r1) + ValueAt(r2))
+                            switch(opCode){
+                                case 0://Add
+
+                                case 1: // Subtract
+
+                                case 2: // Multiply
+
+                                case 4: // Divide(Not the processor's job to catch the dividing by zero error)
+
+                                case 8: // Modulo(Not the processor's job to catch the dividing by zero error)
+                                    int r_d = params.get(0);
+                                    int r_1 = params.get(1);
+                                    int r_2 = params.get(2);
+
+                                    instruction.saveToMemAccess(registers.get(r_1),registers.get(r_2),r_d);
+                                    break;
+                                case 12: // Compare
+                                    r_1 = registers.get(params.get(1));
+                                    r_2 = registers.get(params.get(2));
+
+                                    instruction.saveToMemAccess(registers.get(r_1),registers.get(r_2),13);
+                                    break;
+                            }
+                        case 2://Data Processing Register Indirect(one) with 3 operands (rd = ValueAt(r1) + r2)
+                            //The second parameter is an immediate not a register value
+                            switch(opCode){
+                                case 0://Add
+
+                                case 1: // Subtract
+
+                                case 2: // Multiply
+
+                                case 4: // Divide(Not the processor's job to catch the dividing by zero error)
+
+                                case 8: // Modulo(Not the processor's job to catch the dividing by zero error)
+                                    int r_d = params.get(0);
+                                    int r_1 = params.get(1);
+                                    int r_2 = params.get(2);
+
+                                    instruction.saveToMemAccess(registers.get(r_1),r_2,r_d);
+                                    break;
+                                case 12: // Compare
+                                    r_1 = registers.get(params.get(1));
+                                    r_2 = registers.get(params.get(2));
+
+                                    instruction.saveToMemAccess(registers.get(r_1),r_2,13);
+                                    break;
+                            }
                         case 3: // Data Processing with operand and immediate (rd = r1 + 3)
                             switch (opCode) {
                                 case 0: // Add
@@ -182,6 +261,34 @@ public class Pipeline implements NotifyAvailable {
                                     int imm = params.get(2);
 
                                     instruction.saveToWriteBack(r_d, registers.get(r_1) + imm, true);
+                                    break;
+                                case 1: // Subtract
+                                    r_d = params.get(0);
+                                    r_1 = params.get(1);
+                                    imm = params.get(2);
+
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) - registers.get(imm), true);
+                                    break;
+                                case 2: // Multiply
+                                    r_d = params.get(0);
+                                    r_1 = params.get(1);
+                                    imm = params.get(2);
+
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) * registers.get(imm), true);
+                                    break;
+                                case 4: // Divide(Not the processor's job to catch the dividing by zero error)
+                                    r_d = params.get(0);
+                                    r_1 = params.get(1);
+                                    imm = params.get(2);
+
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) / registers.get(imm), true);
+                                    break;
+                                case 8: // Modulo(Not the processor's job to catch the dividing by zero error)
+                                    r_d = params.get(0);
+                                    r_1 = params.get(1);
+                                    imm = params.get(2);
+
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) % registers.get(imm), true);
                                     break;
                                 case 12: // Compare
                                     r_1 = registers.get(params.get(1));
@@ -219,6 +326,77 @@ public class Pipeline implements NotifyAvailable {
                                     instruction.saveToWriteBack(address, value, false);
                                     break;
                             }
+                            break;
+                        case 8:// Vector Load/Store
+                            switch (opCode) {
+                                case 0:
+                                    //Only direct load happen in execute stage, all memory based loads happen in memory stage
+                                    instruction.saveToWriteBack(params.get(0), registers.get(params.get(1)), true);
+                                    break;
+                                case 1:
+                                    //Store gets executed in the write back or memory access stage
+                                    int address = registers.get(params.get(0));
+                                    int value = registers.get(params.get(1));
+                                    instruction.saveToWriteBack(address, value, false);
+                                    break;
+                            }
+                            break;
+                        case 9:
+                            switch (opCode) {
+                                case 0: // Add
+                                    int r_d = params.get(0);
+                                    int r_1 = params.get(1);
+                                    int r_2 = params.get(2);
+
+                                    int len = instruction.getVectorLength();//number of elements
+                                    int[] v1 = vectorRegisters.get(r_1);
+                                    int[] v2 = vectorRegisters.get(r_2);
+                                    int[] vd = new int[len];
+
+                                    for(int element = 0; element < len;element++){
+                                        vd[element] = v1[element]+v2[element];
+                                    }
+                                    instruction.vectorSaveToWriteBack(r_d, vd, true);
+                                    break;
+                                case 1: // Subtract
+                                    r_d = params.get(0);
+                                    r_1 = params.get(1);
+                                    r_2 = params.get(2);
+
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) - registers.get(r_2), true);
+                                    break;
+                                case 2: // Multiply
+                                    r_d = params.get(0);
+                                    r_1 = params.get(1);
+                                    r_2 = params.get(2);
+
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) * registers.get(r_2), true);
+                                    break;
+                                case 4: // Divide(Not the processor's job to catch the dividing by zero error)
+                                    r_d = params.get(0);
+                                    r_1 = params.get(1);
+                                    r_2 = params.get(2);
+
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) / registers.get(r_2), true);
+                                    break;
+                                case 8: // Modulo(Not the processor's job to catch the dividing by zero error)
+                                    r_d = params.get(0);
+                                    r_1 = params.get(1);
+                                    r_2 = params.get(2);
+
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) % registers.get(r_2), true);
+                                    break;
+                                case 12: // Compare
+                                    r_1 = registers.get(params.get(1));
+                                    r_2 = registers.get(params.get(2));
+
+                                    int cmp = compare(r_1, r_2);
+                                    //Add more conditions
+                                    instruction.saveToWriteBack(13, cmp, true);
+                                    break;
+                            }
+                            break;
+                        case 10:
                             break;
                         default:
                             break;

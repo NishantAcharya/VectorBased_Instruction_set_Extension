@@ -22,6 +22,7 @@ public class Demo extends Application {
     private Memory RAM;
     private Cache cache;
     private Registers registers;
+    private VectorRegisters vectorRegisters;
     private Pipeline pipeline;
 
     public static void main(String[] args) {
@@ -120,7 +121,8 @@ public class Demo extends Application {
         RAM = new Memory(8000, 4);
         cache = new Cache(16, RAM);
         registers = new Registers(16);
-        pipeline = new Pipeline(registers, cache, RAM);
+        vectorRegisters = new VectorRegisters(16,16);
+        pipeline = new Pipeline(registers,vectorRegisters, cache, RAM);
     }
 
     // Load demo instructions and run them in pipeline

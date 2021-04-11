@@ -4,7 +4,6 @@ public class VectorRegisters {
 
     public VectorRegisters(int size, int vectorSize){
         data = new int[size][vectorSize];
-
         //Need to set up observable list of arrays for the UI
     }
 

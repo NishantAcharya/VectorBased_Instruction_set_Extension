@@ -9,9 +9,11 @@ public class Instruction {
     private HashMap<Integer, String> condMap;
     private final HashMap<String, Runnable> callbacks;
 
-    private final ArrayList<AddressValuePair> writebackRegisters;
-    private final ArrayList<AddressValuePair> writebackMem;
-    private ArrayList<AddressPair> memoryAccessRegisters;
+    private  ArrayList<AddressValuePair> writebackRegisters;
+    private  ArrayList<AddressValuePair> writebackMem;
+    private  ArrayList<VectorValuePair> vectorWritebackRegisters;
+    private  ArrayList<VectorValuePair> vectorWritebackMem;
+    private  ArrayList<AddressPair> memoryAccessRegisters;
 
     private String binaryValue;
     private String strValue;
@@ -62,13 +64,27 @@ public class Instruction {
         return false;
     }
 
-    public void saveToMemAccess(int add_1,int add_2){
-        AddressPair ap = new AddressPair(add_1,add_2);
+    public void saveToMemAccess(int add_1,int add_2,int destination){
+        AddressPair ap = new AddressPair(add_1,add_2,destination);
         memoryAccessRegisters.add(ap);
     }
 
-    public ArrayList<AddressPair> getAPstoMemAccess(){
+    public ArrayList<AddressPair> getAPtoMemAccess(){
         return memoryAccessRegisters;
+    }
+
+    public void vectorSaveToWriteBack(int address,int[] value,boolean inRegister){
+        VectorValuePair avp = new VectorValuePair(address, value);
+
+        if (inRegister) {
+            vectorWritebackRegisters.add(avp);
+        } else {
+            vectorWritebackMem.add(avp);
+        }
+    }
+
+    public ArrayList<VectorValuePair> getVPtoWriteBack(boolean inRegister){
+        return inRegister ? vectorWritebackRegisters : vectorWritebackMem;
     }
 
     public void saveToWriteBack(int address, int value, boolean inRegister) {
@@ -317,7 +333,7 @@ public class Instruction {
 
                 this.strValue = opMap.get(opCode) + (opCode == 12 ? "" : " V" + r_d) + " V" + r_1 + " V" + r_2;
                 break;
-            case 11: // Data Processing with operand and immediate (rd = r1 + 3)
+            case 10: // Data Processing with operand and immediate (rd = r1 + 3)
                 r_d = (instr & 0b00000000000001111000000000000000) >> 15;
                 r_1 = (instr & 0b00000000000000000111100000000000) >> 11;
                 imm = (instr & 0b00000000000000000000011111100000) >> 5;
@@ -400,11 +416,22 @@ public class Instruction {
     }
 
     public class AddressPair{
-        int address_1,address_2;
+        int address_1,address_2,destination;
 
-        public AddressPair(int address_1,int address_2){
+        public AddressPair(int address_1,int address_2,int destination){
             this.address_1 = address_1;
             this.address_2 = address_2;
+            this.destination = destination;
+        }
+    }
+
+    public class VectorValuePair{
+        int address;
+        int[] value;
+
+        public VectorValuePair(int address, int[] value) {
+            this.address = address;
+            this.value = value;
         }
     }
 }
