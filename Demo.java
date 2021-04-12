@@ -15,6 +15,7 @@ import javafx.util.Callback;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class Demo extends Application {
     private Label instructionLabel;
@@ -128,10 +129,20 @@ public class Demo extends Application {
     // Load demo instructions and run them in pipeline
     public void runInstructions() {
 
+<<<<<<< HEAD
         try {
 //            loadInstructions(24000, "loop_demo_txt.txt", false);
             loadInstructions(24000, "vector_demo.txt", true);
         } catch (IOException e) { return; }
+=======
+        /*try {
+            loadInstructionsStr(24000, "loop_demo_txt.txt");
+        } catch (IOException e) { return; }*/
+
+        try{
+            loadInstructionsBinary(24000,"demo2.txt");
+        }catch (IOException e) { return; }
+>>>>>>> Nish_Test
 
         System.out.println("LOADED PROGRAM INTO MEMORY");
         RAM.printData(24000, 24008);
@@ -140,6 +151,15 @@ public class Demo extends Application {
         pipeline.run(24000, true, () -> {
             System.out.println("\n-~-~- Program Completed -~-~-");
             RAM.printData(0, 3);
+            ArrayList<Integer> val = vectorRegisters.get(0);
+            for(int k = 0; k < val.size();k++)
+                System.out.println("Vector at point: "+k+" is: "+ val.get(k));
+            val = vectorRegisters.get(1);
+            for(int k = 0; k < val.size();k++)
+                System.out.println("Vector at point: "+k+" is: "+ val.get(k));
+            val = vectorRegisters.get(2);
+            for(int k = 0; k < val.size();k++)
+                System.out.println("Vector at point: "+k+" is: "+ val.get(k));
         });
     }
 

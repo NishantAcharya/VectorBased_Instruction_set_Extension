@@ -99,6 +99,15 @@ public class Memory {
         return 1;
     }
 
+    public int writeLinePartial(String callingFrom,int lineNum,int[] line, int eleNum){
+        if (needsToWait(callingFrom, lineNum))
+            return Memory.WAIT;
+        for(int i = 0; i < eleNum;i++){
+            data[lineNum][i] = line[i];
+        }
+        return 1;
+    }
+
     public void writeSingleValueInCache(int tag,int offset,int value) {
         data[tag][offset] = value;
     }

@@ -199,7 +199,6 @@ public class Pipeline implements NotifyAvailable {
                                     r_2 = registers.get(params.get(2));
 
                                     int cmp = compare(r_1, r_2);
-                                    //Add more conditions
                                     instruction.saveToWriteBack(13, cmp, true);
                                     break;
                                 default:
@@ -222,13 +221,13 @@ public class Pipeline implements NotifyAvailable {
                                     int r_1 = params.get(1);
                                     int r_2 = params.get(2);
 
-                                    instruction.saveToMemAccess(registers.get(r_1),registers.get(r_2),r_d,opCode);
+                                    instruction.saveToMemAccess(registers.get(r_1),registers.get(r_2),r_d,opCode,type);
                                     break;
                                 case 12: // Compare
                                     r_1 = registers.get(params.get(1));
                                     r_2 = registers.get(params.get(2));
 
-                                    instruction.saveToMemAccess(registers.get(r_1),registers.get(r_2),13,opCode);
+                                    instruction.saveToMemAccess(registers.get(r_1),registers.get(r_2),13,opCode,type);
                                     break;
                                 default:
                                     System.out.println("Invalid OPcode: "+opCode);
@@ -250,13 +249,13 @@ public class Pipeline implements NotifyAvailable {
                                     int r_1 = params.get(1);
                                     int r_2 = params.get(2);
 
-                                    instruction.saveToMemAccess(registers.get(r_1),r_2,r_d,opCode);
+                                    instruction.saveToMemAccess(registers.get(r_1),r_2,r_d,opCode,type);
                                     break;
                                 case 12: // Compare
                                     r_1 = registers.get(params.get(1));
                                     r_2 = registers.get(params.get(2));
 
-                                    instruction.saveToMemAccess(registers.get(r_1),r_2,13,opCode);
+                                    instruction.saveToMemAccess(registers.get(r_1),r_2,13,opCode,type);
                                     break;
                                 default:
                                     System.out.println("Invalid OPcode: "+opCode);
@@ -314,8 +313,8 @@ public class Pipeline implements NotifyAvailable {
                         case 5: // Load/Store
                             switch (opCode) {
                                 case 13:
-                                    //Only direct load happen in execute stage, all memory based loads happen in memory stage
-                                    instruction.saveToWriteBack(params.get(0), registers.get(params.get(1)), true);
+                                    //All Loads other than immediate load happen in memory stage
+                                    instruction.saveToWriteBack(params.get(0), registers.get(params.get(1)), false);
                                     break;
                                 case 14:
                                     //Store gets executed in the write back or memory access stage
@@ -349,7 +348,12 @@ public class Pipeline implements NotifyAvailable {
                             switch (opCode) {
                                 case 0:
                                     //Only direct load happen in execute stage, all memory based loads happen in memory stage
-                                    instruction.saveToWriteBack(params.get(0), registers.get(params.get(1)), true);
+                                    ArrayList<Integer> param = vectorRegisters.get(params.get(1));
+                                    int[] v1 = new int[param.size()];
+                                    for(int k = 0; k < param.size();k++){
+                                        v1[k] = param.get(k);
+                                    }
+                                    instruction.vectorSaveToWriteBack(params.get(0), v1, false);
                                     break;
                                 case 1:
                                     //Store gets executed in the write back or memory access stage
@@ -357,6 +361,9 @@ public class Pipeline implements NotifyAvailable {
                                     int value = registers.get(params.get(1));
                                     instruction.saveToWriteBack(address, value, false);
                                     break;
+                                case 2:
+                                    //Singular load to replace immediate load for vectors
+                                    instruction.saveToWriteBack(params.get(0), params.get(1), true);
                                 default:
                                     System.out.println("Invalid OPcode: "+opCode);
                                     break;
@@ -371,12 +378,12 @@ public class Pipeline implements NotifyAvailable {
                                     int r_2 = params.get(2);
 
                                     int len = instruction.getVectorLength();//number of elements
-                                    int[] v1 = vectorRegisters.get(r_1);
-                                    int[] v2 = vectorRegisters.get(r_2);
+                                    ArrayList<Integer> v1 = vectorRegisters.get(r_1);
+                                    ArrayList<Integer> v2 = vectorRegisters.get(r_2);
                                     int[] vd = new int[len];
 
                                     for(int element = 0; element < len;element++){
-                                        vd[element] = v1[element]+v2[element];
+                                        vd[element] = v1.get(element)+v2.get(element);
                                     }
                                     instruction.vectorSaveToWriteBack(r_d, vd, true);
                                     break;
@@ -391,11 +398,12 @@ public class Pipeline implements NotifyAvailable {
                                     vd = new int[len];
 
                                     for(int element = 0; element < len;element++){
-                                        vd[element] = v1[element]-v2[element];
+                                        vd[element] = v1.get(element)-v2.get(element);
                                     }
                                     instruction.vectorSaveToWriteBack(r_d, vd, true);
                                     break;
                                 case 2: // Multiply
+                                    //Vector Multiply needs work
                                     r_d = params.get(0);
                                     r_1 = params.get(1);
                                     r_2 = params.get(2);
@@ -406,7 +414,7 @@ public class Pipeline implements NotifyAvailable {
                                     vd = new int[len];
 
                                     for(int element = 0; element < len;element++){
-                                        vd[element] = v1[element]*v2[element];
+                                        vd[element] = v1.get(element)*v2.get(element);
                                     }
                                     instruction.vectorSaveToWriteBack(r_d, vd, true);
                                     break;
@@ -421,22 +429,7 @@ public class Pipeline implements NotifyAvailable {
                                     vd = new int[len];
 
                                     for(int element = 0; element < len;element++){
-                                        vd[element] = v1[element]/v2[element];
-                                    }
-                                    instruction.vectorSaveToWriteBack(r_d, vd, true);
-                                    break;
-                                case 8: // Modulo(Not the processor's job to catch the dividing by zero error)
-                                    r_d = params.get(0);
-                                    r_1 = params.get(1);
-                                    r_2 = params.get(2);
-
-                                    len = instruction.getVectorLength();//number of elements
-                                    v1 = vectorRegisters.get(r_1);
-                                    v2 = vectorRegisters.get(r_2);
-                                    vd = new int[len];
-
-                                    for(int element = 0; element < len;element++){
-                                        vd[element] = v1[element]%v2[element];
+                                        vd[element] = v1.get(element)/v2.get(element);
                                     }
                                     instruction.vectorSaveToWriteBack(r_d, vd, true);
                                     break;
@@ -453,11 +446,11 @@ public class Pipeline implements NotifyAvailable {
                                     int r_2 = params.get(2);
 
                                     int len = instruction.getVectorLength();//number of elements
-                                    int[] v1 = vectorRegisters.get(r_1);
+                                    ArrayList<Integer> v1 = vectorRegisters.get(r_1);
                                     int[] vd = new int[len];
 
                                     for(int element = 0; element < len;element++){
-                                        vd[element] = v1[element]+r_2;
+                                        vd[element] = v1.get(element)+r_2;
                                     }
                                     instruction.vectorSaveToWriteBack(r_d, vd, true);
                                     break;
@@ -471,7 +464,7 @@ public class Pipeline implements NotifyAvailable {
                                     vd = new int[len];
 
                                     for(int element = 0; element < len;element++){
-                                        vd[element] = v1[element]-r_2;
+                                        vd[element] = v1.get(element)-r_2;
                                     }
                                     instruction.vectorSaveToWriteBack(r_d, vd, true);
                                     break;
@@ -485,7 +478,7 @@ public class Pipeline implements NotifyAvailable {
                                     vd = new int[len];
 
                                     for(int element = 0; element < len;element++){
-                                        vd[element] = v1[element]*r_2;
+                                        vd[element] = v1.get(element)*r_2;
                                     }
                                     instruction.vectorSaveToWriteBack(r_d, vd, true);
                                     break;
@@ -499,21 +492,7 @@ public class Pipeline implements NotifyAvailable {
                                     vd = new int[len];
 
                                     for(int element = 0; element < len;element++){
-                                        vd[element] = v1[element]/r_2;
-                                    }
-                                    instruction.vectorSaveToWriteBack(r_d, vd, true);
-                                    break;
-                                case 8: // Modulo(Not the processor's job to catch the dividing by zero error)
-                                    r_d = params.get(0);
-                                    r_1 = params.get(1);
-                                    r_2 = params.get(2);
-
-                                    len = instruction.getVectorLength();//number of elements
-                                    v1 = vectorRegisters.get(r_1);
-                                    vd = new int[len];
-
-                                    for(int element = 0; element < len;element++){
-                                        vd[element] = v1[element]%r_2;
+                                        vd[element] = v1.get(element)/r_2;
                                     }
                                     instruction.vectorSaveToWriteBack(r_d, vd, true);
                                     break;
@@ -530,11 +509,106 @@ public class Pipeline implements NotifyAvailable {
                     break;
                 }
                 case "Memory Access": {
-                    // Needs to be implemented Branch,Load and Store
+                    //Load from memory needs tp happen here, i.e, needs to access the data here, Load from immediate needs to happen in write back
                     ArrayList<Integer> params = instruction.getParams();
 
+                    //For Indirect access
+                    for (Instruction.AddressPair ap: instruction.getAPtoMemAccess()) {
+                        if(ap.typ == 1){
+                            switch(ap.opcode){
+                                case 0://Add
+                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) + cache.read("Memory Access",ap.address_2) , true);
+                                    break;
+                                case 1://Subtract
+                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) - cache.read("Memory Access",ap.address_2) , true);
+                                    break;
+                                case 2://Multiply
+                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) * cache.read("Memory Access",ap.address_2) , true);
+                                    break;
+                                case 4://Divide
+                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) / cache.read("Memory Access",ap.address_2) , true);
+                                    break;
+                                case 8://Mod
+                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) % cache.read("Memory Access",ap.address_2) , true);
+                                    break;
+                                case 12://Compare
+                                    int cmp = compare(cache.read("Memory Access",ap.address_1), cache.read("Memory Access",ap.address_2));
+                                    instruction.saveToWriteBack(13, cmp, true);
+                                    break;
+                            }
+                        }
+                        else if(ap.typ == 2){
+                            switch(ap.opcode){
+                                case 0://Add
+                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) + ap.address_2, true);
+                                    break;
+                                case 1://Subtract
+                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) - ap.address_2, true);
+                                    break;
+                                case 2://Multiply
+                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) * ap.address_2, true);
+                                    break;
+                                case 4://Divide
+                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) / ap.address_2, true);
+                                    break;
+                                case 8://Mod
+                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) % ap.address_2, true);
+                                    break;
+                                case 12://Compare
+                                    int cmp = compare(cache.read("Memory Access",ap.address_1), ap.address_2);
+                                    instruction.saveToWriteBack(13, cmp, true);
+                                    break;
+                            }
+                        }
+                    }
+
                     for (Instruction.AddressValuePair avp: instruction.getAVPsToWriteBack(false)) {
-                        cache.processorWrite(avp.address, avp.value, name);
+                        //Loading from memory at a given register
+                        if(avp.typ == 5 && avp.opcode == 13){
+                            instruction.saveToWriteBack(avp.address, cache.read("Memory Access", avp.value), true);
+                        }
+                        else if(avp.typ == 8){
+                            if(avp.opcode == 0){//Vector Load from memory(note, the passed result in vd is an int[],change it to Arraylist)
+                                int len = instruction.getVectorLength();
+                                int start = avp.value;
+                                int cacheLen = 4;
+                                int fullreads = len/cacheLen;
+                                int partialread = len%cacheLen;
+                                int[] vd = new int[len];
+                                int j = 0; //Value to keep a track of item in vd
+
+                                //Reading full lines
+                                for(int readNum=0; readNum < fullreads;readNum++){
+                                    int[] line = cache.cacheLineRead(start,4);
+                                    //Copying the values in vd
+                                    for(int k = 0; k < 4;k++){
+                                        vd[j] = line[k];
+                                        j++;
+                                    }
+                                    start += 4;
+                                }
+                                //Reading partial lines
+                                int[] line = cache.cacheLineRead(start,partialread);
+                                for(int k = 0; k < partialread;k++){
+                                    vd[j] = line[k];
+                                    j++;
+                                }
+                                instruction.vectorSaveToWriteBack(avp.address, vd, true);
+                            }
+                            else{//Vector store in memory
+                                int len = instruction.getVectorLength();
+                                int start = avp.value;
+                                int cacheLen = 4;
+                                int fullstore = len/cacheLen;
+                                int partialstore = len%cacheLen;
+                                int address = avp.address;
+
+                                //Need to add a store
+                            }
+                        }
+                        else{
+                            cache.processorWrite(avp.address, avp.value,"Memory Access");
+                        }
                     }
 
                     if (instruction.isBranchingInstruction()) {
@@ -554,8 +628,24 @@ public class Pipeline implements NotifyAvailable {
                     break;
                 }
                 case "Write Back": {
-                    for (Instruction.AddressValuePair avp: instruction.getAVPsToWriteBack(true))
+
+                    for (Instruction.AddressValuePair avp: instruction.getAVPsToWriteBack(true)) {
+                        int opCode = instruction.getOpCode();
+                        int type = instruction.getType();
+                        //Load immediate for vectors(sort of)
+                        if(type == 8 && opCode == 2){
+                            vectorRegisters.loadSet(avp.address, avp.value);
+                            continue;
+                        }
                         registers.set(avp.address, avp.value);
+                    }
+                    for (Instruction.VectorValuePair vp: instruction.getVPtoWriteBack(true)) {
+                        ArrayList<Integer> val = new ArrayList<>();
+                        for (int k = 0; k < vp.value.length; k++) {
+                            val.add(vp.value[k]);
+                        }
+                        vectorRegisters.set(vp.address, val);
+                    }
                     break;
                 }
             }

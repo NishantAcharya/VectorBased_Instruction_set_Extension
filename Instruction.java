@@ -47,6 +47,9 @@ public class Instruction {
 
         writebackRegisters = new ArrayList<>();
         writebackMem = new ArrayList<>();
+        memoryAccessRegisters = new ArrayList<>();
+        vectorWritebackMem = new ArrayList<>();
+        vectorWritebackRegisters = new ArrayList<>();
         stallRegisters = new ArrayList<>();
         dependsOnRegisters = new ArrayList<>();
 
@@ -66,8 +69,8 @@ public class Instruction {
         return false;
     }
 
-    public void saveToMemAccess(int add_1,int add_2,int destination, int opCode){
-        AddressPair ap = new AddressPair(add_1,add_2,destination,opCode);
+    public void saveToMemAccess(int add_1,int add_2,int destination, int opCode, int type){
+        AddressPair ap = new AddressPair(add_1,add_2,destination,opCode,type);
         memoryAccessRegisters.add(ap);
     }
 
@@ -423,22 +426,25 @@ public class Instruction {
     }
 
     public class AddressValuePair {
-        int address, value;
+        int address, value,opcode,typ;
 
         public AddressValuePair(int address, int value) {
             this.address = address;
             this.value = value;
+            this.opcode = opCode;
+            this.typ = type;
         }
     }
 
     public class AddressPair{
-        int address_1,address_2,destination,opCode;
+        int address_1,address_2,destination,opcode,typ;
 
-        public AddressPair(int address_1,int address_2,int destination,int opCode){
+        public AddressPair(int address_1,int address_2,int destination,int opcode, int type){
             this.address_1 = address_1;
             this.address_2 = address_2;
             this.destination = destination;
-            this.opCode = opCode;
+            this.opcode = opcode;
+            this.typ = type;
         }
     }
 
