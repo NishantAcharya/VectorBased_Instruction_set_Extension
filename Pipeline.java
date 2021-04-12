@@ -564,8 +564,28 @@ public class Pipeline implements NotifyAvailable {
                                 int len = instruction.getVectorLength();
                                 int start = avp.value;
                                 int cacheLen = 4;
+                                int fullreads = len/cacheLen;
+                                int partialread = len%cacheLen;
+                                int[] vd = new int[len];
+                                int j = 0; //Value to keep a track of item in vd
 
-
+                                //Reading full lines
+                                for(int readNum=0; readNum < fullreads;readNum++){
+                                    int[] line = cache.cacheLineRead(start,4);
+                                    //Copying the values in vd
+                                    for(int k = 0; k < 4;k++){
+                                        vd[j] = line[k];
+                                        j++;
+                                    }
+                                    start += 4;
+                                }
+                                //Reading partial lines
+                                int[] line = cache.cacheLineRead(start,partialread);
+                                for(int k = 0; k < partialread;k++){
+                                    vd[j] = line[k];
+                                    j++;
+                                }
+                                instruction.vectorSaveToWriteBack(avp.address, vd, true);
                             }
                             else{//Vector store in memory
 
