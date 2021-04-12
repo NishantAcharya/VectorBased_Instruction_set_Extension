@@ -172,14 +172,8 @@ public class Instruction {
         return strValue.isEmpty() ? binaryValue : strValue;
     }
 
-    private boolean isVectorInstr() {
-        return type >= 8 && type <= 10;
-    }
-
     public void decode() {
-        int instr = 0;
-
-        instr = Integer.parseInt(binaryValue, 2);
+        int instr = Integer.parseInt(binaryValue, 2);
 
         this.type =   (instr & 0b00001111000000000000000000000000) >> 24;
         this.opCode = (instr & 0b00000000111100000000000000000000) >> 20;
@@ -420,10 +414,6 @@ public class Instruction {
 
     public int getCondCode() {
         return condCode;
-    }
-
-    public void setCondCode(int condCode) {
-        this.condCode = condCode;
     }
 
     public class AddressValuePair {

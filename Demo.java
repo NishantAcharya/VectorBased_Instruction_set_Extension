@@ -113,7 +113,6 @@ public class Demo extends Application {
 
         stage.setScene(scene);
         stage.show();
-        cache.directWrite(0,new int[]{100,20,10,11},0,"Demo",true);
         runInstructions();
 
     }
@@ -130,8 +129,8 @@ public class Demo extends Application {
     public void runInstructions() {
 
         try {
-//            loadInstructions(24000, "loop_demo_txt.txt", false);
-            loadInstructions(24000, "vector_demo.txt", true);
+            loadInstructions(24000, "vector_demo_txt.txt", false);
+//            loadInstructions(24000, "vector_demo.txt", true);
         } catch (IOException e) { return; }
 
         System.out.println("LOADED PROGRAM INTO MEMORY");
