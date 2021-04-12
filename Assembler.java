@@ -99,12 +99,16 @@ public class Assembler {
             binary = binary | (op1 << 15);
             binary = binary | (op2 << 11);
             binary = binary | (op3 << 7);
-            binary = binary | (op4 << 2);
+
+            if (op4 != -1)
+                binary = binary | (op4 << 2);
         } else if (type == 10) {
             binary = binary | (op1 << 15);
             binary = binary | (op2 << 11);
             binary = binary | (op3 << 5);
-            binary = binary | op4;
+
+            if (op4 != -1)
+                binary = binary | op4;
         }
 
         return binary;
