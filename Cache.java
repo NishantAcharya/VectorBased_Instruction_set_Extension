@@ -250,6 +250,49 @@ public class Cache extends Memory {
         }
     }
 
+    public int[] cacheLineRead(int address, int eleNum){
+        int offset = address % 4;
+        int tag = address - offset; //getting start of the line
+        int tagLoc = -1;
+        //Finding the set of the address
+        int set = (address / 16) % 4; //Setting set to cycle of 16 words
+
+        // Check if tag is in cache
+        for (int i = set * 4; i < (set * 4) + lru[set].length; i++) {
+            if (tags[i] == tag) {
+                tagLoc = i;
+                break;
+            }
+        }
+
+        if(tagLoc >= 0){
+            if (lru[set][tagLoc%4] != 0) {
+                for (int i = 0; i < lru[set].length; i++) { // Update LRU (0 for nextLoc, +1 for everything else)
+                    if(lru[set][i] != -1) {
+                        lru[set][i] = (tagLoc % 4 == i) ? 0 : ((tags[i + (set * 4)] == 0 && !valid[i + (set * 4)]) ? -1 : lru[set][i] + 1);
+                    }
+                    lineData.get(i+(set*4)).setLru(lru[set][i]);
+                }
+            }
+            //Only returning the requested amount of words
+            int[] cacheLine =  super.readLineDemo(tagLoc);
+            int[] returnLine = new int[eleNum];
+            for(int i = 0; i < eleNum;i++){
+                returnLine[i] = cacheLine[i];
+            }
+            return returnLine;
+        }
+        //If not in cache and only returning requested amount of words
+        int[] line =  nextMemory.getLine("Cache",address);
+        int[] returnLine = new int[eleNum];
+        for(int i = 0; i < eleNum;i++){
+            returnLine[i] = line[i];
+        }
+        return returnLine;
+    }
+
+
+
 
     // Holds cache line data to display in table
     public class LineData {

@@ -561,6 +561,10 @@ public class Pipeline implements NotifyAvailable {
                         }
                         else if(avp.typ == 8){
                             if(avp.opcode == 0){//Vector Load from memory(note, the passed result in vd is an int[],change it to Arraylist)
+                                int len = instruction.getVectorLength();
+                                int start = avp.value;
+                                int cacheLen = 4;
+
 
                             }
                             else{//Vector store in memory

@@ -46,6 +46,9 @@ public class Instruction {
 
         writebackRegisters = new ArrayList<>();
         writebackMem = new ArrayList<>();
+        memoryAccessRegisters = new ArrayList<>();
+        vectorWritebackMem = new ArrayList<>();
+        vectorWritebackRegisters = new ArrayList<>();
         stallRegisters = new ArrayList<>();
         dependsOnRegisters = new ArrayList<>();
 
