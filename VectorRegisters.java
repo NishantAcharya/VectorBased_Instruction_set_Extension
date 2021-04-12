@@ -1,4 +1,7 @@
+import com.sun.deploy.util.StringUtils;
+
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class VectorRegisters {
     ArrayList<ArrayList<Integer>> vectorData;
@@ -37,6 +40,11 @@ public class VectorRegisters {
         else{
             vRegister.set(i,value);
         }
+    }
+
+    public void print(int register) {
+        System.out.println("V" + register + ": [" + get(register).stream().map(String::valueOf)
+                .collect(Collectors.joining(", ")) + "]");
     }
 
 

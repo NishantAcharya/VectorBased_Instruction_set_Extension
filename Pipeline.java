@@ -346,7 +346,7 @@ public class Pipeline implements NotifyAvailable {
                             break;
                         case 8:// Vector Load/Store
                             switch (opCode) {
-                                case 0:
+                                case 13:
                                     //Only direct load happen in execute stage, all memory based loads happen in memory stage
                                     ArrayList<Integer> param = vectorRegisters.get(params.get(1));
                                     int[] v1 = new int[param.size()];
@@ -355,15 +355,16 @@ public class Pipeline implements NotifyAvailable {
                                     }
                                     instruction.vectorSaveToWriteBack(params.get(0), v1, false);
                                     break;
-                                case 1:
+                                case 14:
                                     //Store gets executed in the write back or memory access stage
                                     int address = registers.get(params.get(0));
                                     int value = registers.get(params.get(1));
                                     instruction.saveToWriteBack(address, value, false);
                                     break;
-                                case 2:
-                                    //Singular load to replace immediate load for vectors
+                                case 7:
+                                    //Append value onto vector
                                     instruction.saveToWriteBack(params.get(0), params.get(1), true);
+                                    break;
                                 default:
                                     System.out.println("Invalid OPcode: "+opCode);
                                     break;
@@ -382,10 +383,12 @@ public class Pipeline implements NotifyAvailable {
                                     ArrayList<Integer> v2 = vectorRegisters.get(r_2);
                                     int[] vd = new int[len];
 
-                                    for(int element = 0; element < len;element++){
-                                        vd[element] = v1.get(element)+v2.get(element);
+                                    for(int element = 0; element < len; element++){
+                                        vd[element] = v1.get(element) + v2.get(element);
                                     }
+
                                     instruction.vectorSaveToWriteBack(r_d, vd, true);
+
                                     break;
                                 case 1: // Subtract
                                     r_d = params.get(0);
@@ -632,11 +635,13 @@ public class Pipeline implements NotifyAvailable {
                     for (Instruction.AddressValuePair avp: instruction.getAVPsToWriteBack(true)) {
                         int opCode = instruction.getOpCode();
                         int type = instruction.getType();
-                        //Load immediate for vectors(sort of)
-                        if(type == 8 && opCode == 2){
+
+                        if (type == 8 && opCode == 7) { // Append immediate for vectors(sort of)
                             vectorRegisters.loadSet(avp.address, avp.value);
+
                             continue;
                         }
+
                         registers.set(avp.address, avp.value);
                     }
                     for (Instruction.VectorValuePair vp: instruction.getVPtoWriteBack(true)) {
