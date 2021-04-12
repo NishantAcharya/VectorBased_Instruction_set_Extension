@@ -113,7 +113,7 @@ public class Demo extends Application {
         stage.setScene(scene);
         stage.show();
         cache.directWrite(0,new int[]{100,20,10,11},0,"Demo",true);
-       runInstructions();
+        runInstructions();
 
     }
 
@@ -129,7 +129,8 @@ public class Demo extends Application {
     public void runInstructions() {
 
         try {
-            loadInstructionsStr(24000, "loop_demo_txt.txt");
+//            loadInstructions(24000, "loop_demo_txt.txt", false);
+            loadInstructions(24000, "vector_demo.txt", true);
         } catch (IOException e) { return; }
 
         System.out.println("LOADED PROGRAM INTO MEMORY");
@@ -142,12 +143,12 @@ public class Demo extends Application {
         });
     }
 
-    public void loadInstructionsStr(int programAddress, String fileName) throws IOException {
+    public void loadInstructions(int programAddress, String fileName, boolean isBinary) throws IOException {
         int addr = programAddress;
 
         try(BufferedReader br = new BufferedReader(new FileReader(fileName))) {
             for(String line; (line = br.readLine()) != null; ) {
-                int instr = Assembler.toBinary(line);
+                int instr = isBinary ? Integer.parseInt(line, 2) : Assembler.toBinary(line);
                 int out = Memory.WAIT;
 
                 while (out == Memory.WAIT) {
@@ -164,29 +165,4 @@ public class Demo extends Application {
             out = RAM.write("Main", addr, Instruction.HALT);
         }
     }
-
-    // Loads instructions from file into RAM at programAddress
-    public void loadInstructionsBinary(int programAddress, String fileName) throws IOException {
-        int addr = programAddress;
-
-        try(BufferedReader br = new BufferedReader(new FileReader(fileName))) {
-            for(String line; (line = br.readLine()) != null; ) {
-                int instr = Integer.parseInt(line, 2);
-                int out = Memory.WAIT;
-
-                while (out == Memory.WAIT) {
-                    out = RAM.write("Main", addr, instr);
-                }
-
-                addr += 1;
-            }
-        }
-
-        // Write END (-1) after program
-        int out = Memory.WAIT;
-        while (out == Memory.WAIT) {
-            out = RAM.write("Main", addr, Instruction.HALT);
-        }
-    }
-
 }
