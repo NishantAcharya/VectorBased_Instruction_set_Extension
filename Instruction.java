@@ -407,23 +407,25 @@ public class Instruction {
     }
 
     public class AddressValuePair {
-        int address, value;
+        int address, value,opcode,typ;
 
         public AddressValuePair(int address, int value) {
             this.address = address;
             this.value = value;
+            this.opcode = opCode;
+            this.typ = type;
         }
     }
 
     public class AddressPair{
-        int address_1,address_2,destination,opCode,type;
+        int address_1,address_2,destination,opcode,typ;
 
-        public AddressPair(int address_1,int address_2,int destination,int opCode, int type){
+        public AddressPair(int address_1,int address_2,int destination,int opcode, int type){
             this.address_1 = address_1;
             this.address_2 = address_2;
             this.destination = destination;
-            this.opCode = opCode;
-            this.type = type;
+            this.opcode = opcode;
+            this.typ = type;
         }
     }
 

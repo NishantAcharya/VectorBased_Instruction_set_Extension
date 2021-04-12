@@ -313,8 +313,8 @@ public class Pipeline implements NotifyAvailable {
                         case 5: // Load/Store
                             switch (opCode) {
                                 case 13:
-                                    //Only direct load happen in execute stage, all memory based loads happen in memory stage
-                                    instruction.saveToWriteBack(params.get(0), registers.get(params.get(1)), true);
+                                    //All Loads other than immediate load happen in memory stage
+                                    instruction.saveToWriteBack(params.get(0), registers.get(params.get(1)), false);
                                     break;
                                 case 14:
                                     //Store gets executed in the write back or memory access stage
@@ -348,7 +348,7 @@ public class Pipeline implements NotifyAvailable {
                             switch (opCode) {
                                 case 0:
                                     //Only direct load happen in execute stage, all memory based loads happen in memory stage
-                                    instruction.saveToWriteBack(params.get(0), registers.get(params.get(1)), true);
+                                    instruction.saveToWriteBack(params.get(0), registers.get(params.get(1)), false);
                                     break;
                                 case 1:
                                     //Store gets executed in the write back or memory access stage
@@ -506,8 +506,8 @@ public class Pipeline implements NotifyAvailable {
 
                     //For Indirect access
                     for (Instruction.AddressPair ap: instruction.getAPtoMemAccess()) {
-                        if(ap.type == 1){
-                            switch(ap.opCode){
+                        if(ap.typ == 1){
+                            switch(ap.opcode){
                                 case 0://Add
                                     instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) + cache.read("Memory Access",ap.address_2) , true);
                                     break;
@@ -529,8 +529,8 @@ public class Pipeline implements NotifyAvailable {
                                     break;
                             }
                         }
-                        else if(ap.type == 2){
-                            switch(ap.opCode){
+                        else if(ap.typ == 2){
+                            switch(ap.opcode){
                                 case 0://Add
                                     instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) + ap.address_2, true);
                                     break;
@@ -555,7 +555,13 @@ public class Pipeline implements NotifyAvailable {
                     }
 
                     for (Instruction.AddressValuePair avp: instruction.getAVPsToWriteBack(false)) {
-                        cache.processorWrite(avp.address, avp.value, name);
+                        //Loading from memory at a given register
+                        if(avp.typ == 5 && avp.opcode == 13){
+                            instruction.saveToWriteBack(avp.address, cache.read("Memory Access", avp.value), true);
+                        }
+                        else{
+                            cache.processorWrite(avp.address, avp.value,"Memory Access");
+                        }
                     }
 
                     if (instruction.isBranchingInstruction()) {
