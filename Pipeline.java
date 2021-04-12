@@ -370,12 +370,12 @@ public class Pipeline implements NotifyAvailable {
                                     int r_2 = params.get(2);
 
                                     int len = instruction.getVectorLength();//number of elements
-                                    int[] v1 = vectorRegisters.get(r_1);
-                                    int[] v2 = vectorRegisters.get(r_2);
+                                    ArrayList<Integer> v1 = vectorRegisters.get(r_1);
+                                    ArrayList<Integer> v2 = vectorRegisters.get(r_2);
                                     int[] vd = new int[len];
 
                                     for(int element = 0; element < len;element++){
-                                        vd[element] = v1[element]+v2[element];
+                                        vd[element] = v1.get(element)+v2.get(element);
                                     }
                                     instruction.vectorSaveToWriteBack(r_d, vd, true);
                                     break;
@@ -390,7 +390,7 @@ public class Pipeline implements NotifyAvailable {
                                     vd = new int[len];
 
                                     for(int element = 0; element < len;element++){
-                                        vd[element] = v1[element]-v2[element];
+                                        vd[element] = v1.get(element)-v2.get(element);
                                     }
                                     instruction.vectorSaveToWriteBack(r_d, vd, true);
                                     break;
@@ -406,7 +406,7 @@ public class Pipeline implements NotifyAvailable {
                                     vd = new int[len];
 
                                     for(int element = 0; element < len;element++){
-                                        vd[element] = v1[element]*v2[element];
+                                        vd[element] = v1.get(element)*v2.get(element);
                                     }
                                     instruction.vectorSaveToWriteBack(r_d, vd, true);
                                     break;
@@ -421,7 +421,7 @@ public class Pipeline implements NotifyAvailable {
                                     vd = new int[len];
 
                                     for(int element = 0; element < len;element++){
-                                        vd[element] = v1[element]/v2[element];
+                                        vd[element] = v1.get(element)/v2.get(element);
                                     }
                                     instruction.vectorSaveToWriteBack(r_d, vd, true);
                                     break;
@@ -438,11 +438,11 @@ public class Pipeline implements NotifyAvailable {
                                     int r_2 = params.get(2);
 
                                     int len = instruction.getVectorLength();//number of elements
-                                    int[] v1 = vectorRegisters.get(r_1);
+                                    ArrayList<Integer> v1 = vectorRegisters.get(r_1);
                                     int[] vd = new int[len];
 
                                     for(int element = 0; element < len;element++){
-                                        vd[element] = v1[element]+r_2;
+                                        vd[element] = v1.get(element)+r_2;
                                     }
                                     instruction.vectorSaveToWriteBack(r_d, vd, true);
                                     break;
@@ -456,7 +456,7 @@ public class Pipeline implements NotifyAvailable {
                                     vd = new int[len];
 
                                     for(int element = 0; element < len;element++){
-                                        vd[element] = v1[element]-r_2;
+                                        vd[element] = v1.get(element)-r_2;
                                     }
                                     instruction.vectorSaveToWriteBack(r_d, vd, true);
                                     break;
@@ -470,7 +470,7 @@ public class Pipeline implements NotifyAvailable {
                                     vd = new int[len];
 
                                     for(int element = 0; element < len;element++){
-                                        vd[element] = v1[element]*r_2;
+                                        vd[element] = v1.get(element)*r_2;
                                     }
                                     instruction.vectorSaveToWriteBack(r_d, vd, true);
                                     break;
@@ -484,7 +484,7 @@ public class Pipeline implements NotifyAvailable {
                                     vd = new int[len];
 
                                     for(int element = 0; element < len;element++){
-                                        vd[element] = v1[element]/r_2;
+                                        vd[element] = v1.get(element)/r_2;
                                     }
                                     instruction.vectorSaveToWriteBack(r_d, vd, true);
                                     break;
@@ -558,6 +558,14 @@ public class Pipeline implements NotifyAvailable {
                         //Loading from memory at a given register
                         if(avp.typ == 5 && avp.opcode == 13){
                             instruction.saveToWriteBack(avp.address, cache.read("Memory Access", avp.value), true);
+                        }
+                        else if(avp.typ == 8){
+                            if(avp.opcode == 0){//Vector Load from memory(note, the passed result in vd is an int[],change it to Arraylist)
+
+                            }
+                            else{//Vector store in memory
+
+                            }
                         }
                         else{
                             cache.processorWrite(avp.address, avp.value,"Memory Access");
