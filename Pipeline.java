@@ -356,6 +356,9 @@ public class Pipeline implements NotifyAvailable {
                                     int value = registers.get(params.get(1));
                                     instruction.saveToWriteBack(address, value, false);
                                     break;
+                                case 2:
+                                    //Singular load to replace immediate load for vectors
+                                    instruction.saveToWriteBack(params.get(0), params.get(1), true);
                                 default:
                                     System.out.println("Invalid OPcode: "+opCode);
                                     break;
@@ -621,8 +624,16 @@ public class Pipeline implements NotifyAvailable {
                 }
                 case "Write Back": {
 
-                    for (Instruction.AddressValuePair avp: instruction.getAVPsToWriteBack(true))
+                    for (Instruction.AddressValuePair avp: instruction.getAVPsToWriteBack(true)) {
+                        int opCode = instruction.getOpCode();
+                        int type = instruction.getType();
+                        //Load immediate for vectors(sort of)
+                        if(type == 8 && opCode == 2){
+                            vectorRegisters.loadSet(avp.address, avp.value);
+                            continue;
+                        }
                         registers.set(avp.address, avp.value);
+                    }
                     for (Instruction.VectorValuePair vp: instruction.getVPtoWriteBack(true)) {
                         ArrayList<Integer> val = new ArrayList<>();
                         for (int k = 0; k < vp.value.length; k++) {
