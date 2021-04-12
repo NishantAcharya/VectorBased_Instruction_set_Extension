@@ -1,5 +1,7 @@
 //Cache num of lines should be multiples of 4
 import javafx.application.Application;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -13,11 +15,8 @@ import javafx.util.Callback;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 
 public class Demo extends Application {
-    private Label instructionLabel;
-
     private Memory RAM;
     private Cache cache;
     private Registers registers;
@@ -41,13 +40,13 @@ public class Demo extends Application {
         Tab vectorRegTab = new Tab("Vector Registers"  , new Label("Show vector registers content"));
         Tab pipelineTab = new Tab("Pipeline" , new Label("Show pipeline"));
 
-        regCacheTab.setClosable(false);
         vectorRegTab.setClosable(false);
+        regCacheTab.setClosable(false);
         pipelineTab.setClosable(false);
 
-        tabPane.getTabs().add(pipelineTab);
         tabPane.getTabs().add(regCacheTab);
         tabPane.getTabs().add(vectorRegTab);
+        tabPane.getTabs().add(pipelineTab);
 
         regCacheTab.setContent(getRegCacheUI());
         vectorRegTab.setContent(getVectorRegUI());
@@ -114,24 +113,27 @@ public class Demo extends Application {
     }
 
     private Node getVectorRegUI() {
-        TableView vecTable = new TableView();
+        TableView<VectorRegisters.VRData> vecTable = new TableView<>();
         vecTable.setSelectionModel(null);
 
-        TableColumn labelCol = new TableColumn("#");
-        labelCol.setCellFactory(new Callback<TableColumn, TableCell>() {
-            @Override
-            public TableCell call(TableColumn param) {
-                return new TableCell() {
-                    @Override protected void updateItem(Object item, boolean empty) {
-                        super.updateItem(item, empty);
-                        setText(this.getTableRow() + "");
-                    }
-                };
-            }
-        });
+        TableColumn labelCol = new TableColumn<>("#");
+        labelCol.setCellValueFactory(new PropertyValueFactory<VectorRegisters.VRData, String>("label"));
 
-        vecTable.getColumns().addAll(labelCol);
+        labelCol.setSortable(false);
+        labelCol.setMinWidth(50);
+        labelCol.setStyle( "-fx-alignment: CENTER;");
 
+        vecTable.getColumns().add(labelCol);
+
+        for (int i = 0; i < 16; i++) {
+            TableColumn tc = new TableColumn(i + "");
+            tc.setCellValueFactory(new PropertyValueFactory<VectorRegisters.VRData, String>("r" + i));
+            tc.setSortable(false);
+            tc.setPrefWidth(50);
+            vecTable.getColumns().add(tc);
+        }
+
+        vecTable.setItems(vectorRegisters.vrData);
         return vecTable;
     }
 
@@ -161,6 +163,7 @@ public class Demo extends Application {
                 };
             }
         });
+        labelCol.setSortable(false);
 
         labelCol.setMaxWidth(1200);
         labelCol.setStyle( "-fx-alignment: CENTER;");
@@ -168,6 +171,7 @@ public class Demo extends Application {
         TableColumn registerCol = new TableColumn("Value");
         registerCol.setCellValueFactory(c -> ((TableColumn.CellDataFeatures)c).getValue());
         registerCol.setStyle( "-fx-alignment: CENTER;");
+        registerCol.setSortable(false);
 
         registersTable.getColumns().addAll(labelCol, registerCol);
         registersTable.setItems(registers.registerData);
@@ -177,25 +181,33 @@ public class Demo extends Application {
         registersTable.setFocusTraversable(false);
         registersTable.refresh();
 
-        TableView cacheTable = new TableView();
+        TableView<Cache.LineData> cacheTable = new TableView<Cache.LineData>();
         cacheTable.setSelectionModel(null);
 
-        TableColumn lruCol = new TableColumn("LRU");
-        lruCol.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("lru"));
-        TableColumn tagCol = new TableColumn("TAG");
-        tagCol.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("tag"));
-        TableColumn dirtyCol = new TableColumn("D");
-        dirtyCol.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("dirty"));
-        TableColumn validCol = new TableColumn("V");
-        validCol.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("v"));
-        TableColumn w1Col = new TableColumn("Word 1");
-        w1Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("word1"));
-        TableColumn w2Col = new TableColumn("Word 2");
-        w2Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("word2"));
-        TableColumn w3Col = new TableColumn("Word 3");
-        w3Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("word3"));
-        TableColumn w4Col = new TableColumn("Word 4");
-        w4Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("word4"));
+        TableColumn<Cache.LineData, Integer> lruCol = new TableColumn<Cache.LineData, Integer>("LRU");
+        lruCol.setCellValueFactory(new PropertyValueFactory<>("lru"));
+        TableColumn<Cache.LineData, Integer> tagCol = new TableColumn<>("TAG");
+        tagCol.setCellValueFactory(new PropertyValueFactory<>("tag"));
+        TableColumn<Cache.LineData, Integer> dirtyCol = new TableColumn<>("D");
+        dirtyCol.setCellValueFactory(new PropertyValueFactory<>("dirty"));
+        TableColumn<Cache.LineData, Integer> validCol = new TableColumn<>("V");
+        validCol.setCellValueFactory(new PropertyValueFactory<>("v"));
+        TableColumn<Cache.LineData, Integer> w1Col = new TableColumn<>("Word 1");
+        w1Col.setCellValueFactory(new PropertyValueFactory<>("word1"));
+        TableColumn<Cache.LineData, Integer> w2Col = new TableColumn<>("Word 2");
+        w2Col.setCellValueFactory(new PropertyValueFactory<>("word2"));
+        TableColumn<Cache.LineData, Integer> w3Col = new TableColumn<>("Word 3");
+        w3Col.setCellValueFactory(new PropertyValueFactory<>("word3"));
+        TableColumn<Cache.LineData, Integer> w4Col = new TableColumn<>("Word 4");
+        w4Col.setCellValueFactory(new PropertyValueFactory<>("word4"));
+
+        lruCol.setSortable(false);
+        tagCol.setSortable(false);
+        dirtyCol.setSortable(false);
+        w1Col.setSortable(false);
+        w2Col.setSortable(false);
+        w3Col.setSortable(false);
+        w4Col.setSortable(false);
 
         cacheTable.getColumns().addAll(lruCol, tagCol, dirtyCol, validCol, w1Col, w2Col, w3Col, w4Col);
         cacheTable.setItems(cache.lineData);
