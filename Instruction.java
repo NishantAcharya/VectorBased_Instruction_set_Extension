@@ -64,8 +64,8 @@ public class Instruction {
         return false;
     }
 
-    public void saveToMemAccess(int add_1,int add_2,int destination, int opCode){
-        AddressPair ap = new AddressPair(add_1,add_2,destination,opCode);
+    public void saveToMemAccess(int add_1,int add_2,int destination, int opCode, int type){
+        AddressPair ap = new AddressPair(add_1,add_2,destination,opCode,type);
         memoryAccessRegisters.add(ap);
     }
 
@@ -416,13 +416,14 @@ public class Instruction {
     }
 
     public class AddressPair{
-        int address_1,address_2,destination,opCode;
+        int address_1,address_2,destination,opCode,type;
 
-        public AddressPair(int address_1,int address_2,int destination,int opCode){
+        public AddressPair(int address_1,int address_2,int destination,int opCode, int type){
             this.address_1 = address_1;
             this.address_2 = address_2;
             this.destination = destination;
             this.opCode = opCode;
+            this.type = type;
         }
     }
 
