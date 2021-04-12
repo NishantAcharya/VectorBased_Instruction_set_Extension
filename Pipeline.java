@@ -346,7 +346,7 @@ public class Pipeline implements NotifyAvailable {
                             break;
                         case 8:// Vector Load/Store
                             switch (opCode) {
-                                case 0:
+                                case 13:
                                     //Only direct load happen in execute stage, all memory based loads happen in memory stage
                                     ArrayList<Integer> param = vectorRegisters.get(params.get(1));
                                     int[] v1 = new int[param.size()];
@@ -355,13 +355,13 @@ public class Pipeline implements NotifyAvailable {
                                     }
                                     instruction.vectorSaveToWriteBack(params.get(0), v1, false);
                                     break;
-                                case 1:
+                                case 14:
                                     //Store gets executed in the write back or memory access stage
                                     int address = registers.get(params.get(0));
                                     int value = registers.get(params.get(1));
                                     instruction.saveToWriteBack(address, value, false);
                                     break;
-                                case 2:
+                                case 7:
                                     //Singular load to replace immediate load for vectors
                                     instruction.saveToWriteBack(params.get(0), params.get(1), true);
                                 default:
