@@ -588,7 +588,14 @@ public class Pipeline implements NotifyAvailable {
                                 instruction.vectorSaveToWriteBack(avp.address, vd, true);
                             }
                             else{//Vector store in memory
+                                int len = instruction.getVectorLength();
+                                int start = avp.value;
+                                int cacheLen = 4;
+                                int fullstore = len/cacheLen;
+                                int partialstore = len%cacheLen;
+                                int address = avp.address;
 
+                                //Need to add a store
                             }
                         }
                         else{
@@ -613,8 +620,16 @@ public class Pipeline implements NotifyAvailable {
                     break;
                 }
                 case "Write Back": {
+
                     for (Instruction.AddressValuePair avp: instruction.getAVPsToWriteBack(true))
                         registers.set(avp.address, avp.value);
+                    for (Instruction.VectorValuePair vp: instruction.getVPtoWriteBack(true)) {
+                        ArrayList<Integer> val = new ArrayList<>();
+                        for (int k = 0; k < vp.value.length; k++) {
+                            val.add(vp.value[k]);
+                        }
+                        vectorRegisters.set(vp.address, val);
+                    }
                     break;
                 }
             }

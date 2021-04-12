@@ -294,6 +294,7 @@ public class Cache extends Memory {
 
 
 
+
     // Holds cache line data to display in table
     public class LineData {
         public SimpleIntegerProperty lru, tag, v, word1, word2, word3, word4, dirty;
