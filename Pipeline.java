@@ -348,7 +348,12 @@ public class Pipeline implements NotifyAvailable {
                             switch (opCode) {
                                 case 0:
                                     //Only direct load happen in execute stage, all memory based loads happen in memory stage
-                                    instruction.saveToWriteBack(params.get(0), registers.get(params.get(1)), false);
+                                    ArrayList<Integer> param = vectorRegisters.get(params.get(1));
+                                    int[] v1 = new int[param.size()];
+                                    for(int k = 0; k < param.size();k++){
+                                        v1[k] = param.get(k);
+                                    }
+                                    instruction.saveToWriteBack(params.get(0), vectorRegisters.get(params.get(1)), false);
                                     break;
                                 case 1:
                                     //Store gets executed in the write back or memory access stage

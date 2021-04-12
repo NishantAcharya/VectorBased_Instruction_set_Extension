@@ -15,6 +15,7 @@ import javafx.util.Callback;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class Demo extends Application {
     private Label instructionLabel;
@@ -143,6 +144,15 @@ public class Demo extends Application {
         pipeline.run(24000, true, () -> {
             System.out.println("\n-~-~- Program Completed -~-~-");
             RAM.printData(0, 3);
+            ArrayList<Integer> val = vectorRegisters.get(0);
+            for(int k = 0; k < val.size();k++)
+                System.out.println("Vector at point: "+k+" is: "+ val.get(k));
+            val = vectorRegisters.get(1);
+            for(int k = 0; k < val.size();k++)
+                System.out.println("Vector at point: "+k+" is: "+ val.get(k));
+            val = vectorRegisters.get(2);
+            for(int k = 0; k < val.size();k++)
+                System.out.println("Vector at point: "+k+" is: "+ val.get(k));
         });
     }
 
