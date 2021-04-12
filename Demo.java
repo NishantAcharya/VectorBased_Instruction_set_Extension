@@ -2,11 +2,9 @@
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
@@ -38,6 +36,106 @@ public class Demo extends Application {
         // Sets up memory and pipeline
         setup();
 
+        TabPane tabPane = new TabPane();
+        Tab regCacheTab = new Tab("Register/Cache", new Label("Show registers and cache data"));
+        Tab vectorRegTab = new Tab("Vector Registers"  , new Label("Show vector registers content"));
+        Tab pipelineTab = new Tab("Pipeline" , new Label("Show pipeline"));
+
+        regCacheTab.setClosable(false);
+        vectorRegTab.setClosable(false);
+        pipelineTab.setClosable(false);
+
+        tabPane.getTabs().add(pipelineTab);
+        tabPane.getTabs().add(regCacheTab);
+        tabPane.getTabs().add(vectorRegTab);
+
+        regCacheTab.setContent(getRegCacheUI());
+        vectorRegTab.setContent(getVectorRegUI());
+
+        ((Group) scene.getRoot()).getChildren().addAll(tabPane);
+
+        stage.setScene(scene);
+        stage.show();
+        runInstructions();
+
+    }
+
+    public void setup() {
+        RAM = new Memory(8000, 4);
+        cache = new Cache(16, RAM);
+        registers = new Registers(16);
+        vectorRegisters = new VectorRegisters(16,16);
+        pipeline = new Pipeline(registers,vectorRegisters, cache, RAM);
+    }
+
+    // Load demo instructions and run them in pipeline
+    public void runInstructions() {
+
+        try {
+            loadInstructions(24000, "vector_demo_txt.txt", false);
+//            loadInstructions(24000, "vector_demo.txt", true);
+        } catch (IOException e) { return; }
+
+        System.out.println("LOADED PROGRAM INTO MEMORY");
+        RAM.printData(24000, 24008);
+        System.out.println();
+
+        pipeline.run(24000, true, () -> {
+            System.out.println("\n-~-~- Program Completed -~-~-");
+//            RAM.printData(0, 3);
+
+            vectorRegisters.print(0);
+            vectorRegisters.print(1);
+            vectorRegisters.print(2);
+        });
+    }
+
+    public void loadInstructions(int programAddress, String fileName, boolean isBinary) throws IOException {
+        int addr = programAddress;
+
+        try(BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            for(String line; (line = br.readLine()) != null; ) {
+                int instr = isBinary ? Integer.parseInt(line, 2) : Assembler.toBinary(line);
+                int out = Memory.WAIT;
+
+                while (out == Memory.WAIT) {
+                    out = RAM.write("Main", addr, instr);
+                }
+
+                addr += 1;
+            }
+        }
+
+        // Write END (-1) after program
+        int out = Memory.WAIT;
+        while (out == Memory.WAIT) {
+            out = RAM.write("Main", addr, Instruction.HALT);
+        }
+    }
+
+    private Node getVectorRegUI() {
+        TableView vecTable = new TableView();
+        vecTable.setSelectionModel(null);
+
+        TableColumn labelCol = new TableColumn("#");
+        labelCol.setCellFactory(new Callback<TableColumn, TableCell>() {
+            @Override
+            public TableCell call(TableColumn param) {
+                return new TableCell() {
+                    @Override protected void updateItem(Object item, boolean empty) {
+                        super.updateItem(item, empty);
+                        setText(this.getTableRow() + "");
+                    }
+                };
+            }
+        });
+
+        vecTable.getColumns().addAll(labelCol);
+
+        return vecTable;
+    }
+
+    private Node getRegCacheUI() {
         TableView registersTable = new TableView();
         registersTable.setSelectionModel(null);
 
@@ -109,64 +207,6 @@ public class Demo extends Application {
         hBox.setPadding(new Insets(10, 10, 10, 10));
         hBox.getChildren().addAll(registersTable, cacheTable);
 
-        ((Group) scene.getRoot()).getChildren().addAll(hBox);
-
-        stage.setScene(scene);
-        stage.show();
-        runInstructions();
-
-    }
-
-    public void setup() {
-        RAM = new Memory(8000, 4);
-        cache = new Cache(16, RAM);
-        registers = new Registers(16);
-        vectorRegisters = new VectorRegisters(16,16);
-        pipeline = new Pipeline(registers,vectorRegisters, cache, RAM);
-    }
-
-    // Load demo instructions and run them in pipeline
-    public void runInstructions() {
-
-        try {
-            loadInstructions(24000, "vector_demo_txt.txt", false);
-//            loadInstructions(24000, "vector_demo.txt", true);
-        } catch (IOException e) { return; }
-
-        System.out.println("LOADED PROGRAM INTO MEMORY");
-        RAM.printData(24000, 24008);
-        System.out.println();
-
-        pipeline.run(24000, true, () -> {
-            System.out.println("\n-~-~- Program Completed -~-~-");
-//            RAM.printData(0, 3);
-
-            vectorRegisters.print(0);
-            vectorRegisters.print(1);
-            vectorRegisters.print(2);
-        });
-    }
-
-    public void loadInstructions(int programAddress, String fileName, boolean isBinary) throws IOException {
-        int addr = programAddress;
-
-        try(BufferedReader br = new BufferedReader(new FileReader(fileName))) {
-            for(String line; (line = br.readLine()) != null; ) {
-                int instr = isBinary ? Integer.parseInt(line, 2) : Assembler.toBinary(line);
-                int out = Memory.WAIT;
-
-                while (out == Memory.WAIT) {
-                    out = RAM.write("Main", addr, instr);
-                }
-
-                addr += 1;
-            }
-        }
-
-        // Write END (-1) after program
-        int out = Memory.WAIT;
-        while (out == Memory.WAIT) {
-            out = RAM.write("Main", addr, Instruction.HALT);
-        }
+        return hBox;
     }
 }

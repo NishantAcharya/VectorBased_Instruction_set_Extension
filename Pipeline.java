@@ -637,7 +637,7 @@ public class Pipeline implements NotifyAvailable {
                         int type = instruction.getType();
 
                         if (type == 8 && opCode == 7) { // Append immediate for vectors(sort of)
-                            vectorRegisters.loadSet(avp.address, avp.value);
+                            vectorRegisters.append(avp.address, avp.value);
 
                             continue;
                         }
