@@ -7,7 +7,6 @@ public class Assembler {
     private static HashMap<String, Integer> opMap, opMapV, condMap;
 
     public static int toBinary(String line) {
-        System.out.println(line);
         setupHashMaps();
 
         String[] tokens = line.toUpperCase().split(" ");
