@@ -2,13 +2,17 @@
 import javafx.application.Application;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
@@ -22,6 +26,11 @@ public class Demo extends Application {
     private Registers registers;
     private VectorRegisters vectorRegisters;
     private Pipeline pipeline;
+
+    private TableView<Pipeline.StageData> pipelineTable;
+    private TableView<VectorRegisters.VRData> vecTable;
+    private TableView<Cache.LineData> cacheTable;
+    private TableView registersTable;
 
     public static void main(String[] args) {
         launch(args);
@@ -44,10 +53,11 @@ public class Demo extends Application {
         regCacheTab.setClosable(false);
         pipelineTab.setClosable(false);
 
+        tabPane.getTabs().add(pipelineTab);
         tabPane.getTabs().add(regCacheTab);
         tabPane.getTabs().add(vectorRegTab);
-        tabPane.getTabs().add(pipelineTab);
 
+        pipelineTab.setContent(getPipelineUI());
         regCacheTab.setContent(getRegCacheUI());
         vectorRegTab.setContent(getVectorRegUI());
 
@@ -55,7 +65,7 @@ public class Demo extends Application {
 
         stage.setScene(scene);
         stage.show();
-        runInstructions();
+//        runInstructions();
 
     }
 
@@ -65,6 +75,13 @@ public class Demo extends Application {
         registers = new Registers(16);
         vectorRegisters = new VectorRegisters(16,16);
         pipeline = new Pipeline(registers,vectorRegisters, cache, RAM);
+
+        if (cacheTable != null) {
+            cacheTable.setItems(cache.lineData);
+            registersTable.setItems(registers.registerData);
+            vecTable.setItems(vectorRegisters.vrData);
+            pipelineTable.setItems(pipeline.stageData);
+        }
     }
 
     // Load demo instructions and run them in pipeline
@@ -112,8 +129,59 @@ public class Demo extends Application {
         }
     }
 
+    private Node getPipelineUI() {
+        Label fileNameLabel = new Label("File Name:");
+        TextField fileField = new TextField ();
+        Button runBtn = new Button("Run");
+
+        runBtn.setOnMouseClicked(event -> {
+            String fileName = fileField.getText();
+
+            try {
+                setup(); // Reset environment
+                loadInstructions(24000, "Programs/" + fileName, false);
+                System.out.println(fileName + " loaded into memory");
+
+                pipeline.run(24000, true, () -> {
+                    System.out.println("Finished running " + fileName);
+                });
+            } catch (IOException e) {
+                System.out.println("No program called " + fileName);
+            }
+        });
+
+        pipelineTable = new TableView<>();
+        pipelineTable.setSelectionModel(null);
+
+        TableColumn<Pipeline.StageData, String> stgCol = new TableColumn<>("Stage");
+        stgCol.setCellValueFactory(new PropertyValueFactory<>("name"));
+        TableColumn<Pipeline.StageData, String> instrCol = new TableColumn<>("Instruction");
+        instrCol.setCellValueFactory(new PropertyValueFactory<>("instruction"));
+
+        stgCol.setSortable(false);
+        instrCol.setSortable(false);
+
+        pipelineTable.getColumns().addAll(stgCol, instrCol);
+        pipelineTable.setItems(pipeline.stageData);
+
+        pipelineTable.setMaxWidth(250);
+        pipelineTable.setMaxHeight(153);
+        pipelineTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        pipelineTable.setFocusTraversable(false);
+
+        HBox hb = new HBox(10);
+        hb.getChildren().addAll(fileNameLabel, fileField, runBtn);
+        hb.setAlignment(Pos.CENTER_LEFT);
+
+        VBox vb = new VBox(10);
+        vb.setStyle("-fx-padding: 12 12 12 12;");
+        vb.getChildren().addAll(hb, pipelineTable);
+
+        return vb;
+    }
+
     private Node getVectorRegUI() {
-        TableView<VectorRegisters.VRData> vecTable = new TableView<>();
+        vecTable = new TableView<>();
         vecTable.setSelectionModel(null);
 
         TableColumn labelCol = new TableColumn<>("#");
@@ -138,7 +206,7 @@ public class Demo extends Application {
     }
 
     private Node getRegCacheUI() {
-        TableView registersTable = new TableView();
+        registersTable = new TableView();
         registersTable.setSelectionModel(null);
 
         TableColumn labelCol = new TableColumn("#");
@@ -181,7 +249,7 @@ public class Demo extends Application {
         registersTable.setFocusTraversable(false);
         registersTable.refresh();
 
-        TableView<Cache.LineData> cacheTable = new TableView<Cache.LineData>();
+        cacheTable = new TableView<>();
         cacheTable.setSelectionModel(null);
 
         TableColumn<Cache.LineData, Integer> lruCol = new TableColumn<Cache.LineData, Integer>("LRU");

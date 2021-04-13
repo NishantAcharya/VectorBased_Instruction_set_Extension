@@ -1,8 +1,17 @@
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
+import javax.swing.text.TableView;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Pipeline implements NotifyAvailable {
 
     private final Stage[] stages;
+    public ObservableList<StageData> stageData;
+    private HashMap<Stage, StageData> stageDataMap;
 
     private boolean firstStageAvailable = true;
     private boolean runningProgram = false;
@@ -33,6 +42,18 @@ public class Pipeline implements NotifyAvailable {
         Stage stage1 = new Stage("Fetch", stage2);
 
         stages = new Stage[] { stage1, stage2, stage3, stage4, stage5 };
+
+        ArrayList<StageData> sdTemp = new ArrayList<>();
+        stageDataMap = new HashMap<>();
+
+        for (Stage s: stages) {
+            StageData sd = new StageData(s.name);
+
+            sdTemp.add(sd);
+            stageDataMap.put(s, sd);
+        }
+
+        stageData = FXCollections.observableList(sdTemp);
     }
 
     int instrID = 0;
@@ -56,10 +77,7 @@ public class Pipeline implements NotifyAvailable {
 
         // Set PC to address of program
         registers.setPC(programAddress);
-
-        if (firstStageAvailable) {
-            runNewInstruction();
-        }
+        runNewInstruction();
     }
 
     @Override
@@ -111,6 +129,7 @@ public class Pipeline implements NotifyAvailable {
 
             this.finishedRun = false;
             this.instruction = i;
+            stageDataMap.get(this).setInstruction(i.toString());
 
             Instruction dependsOnInstr = null;
 
@@ -663,6 +682,7 @@ public class Pipeline implements NotifyAvailable {
                 endID = instruction.id;
 
                 this.instruction = null;
+                stageDataMap.get(this).setInstruction("");
                 this.finishedRun = true;
 
                 runningProgram = false;
@@ -686,6 +706,7 @@ public class Pipeline implements NotifyAvailable {
         private void stageFinished() {
             // Checks if there are any callbacks associated with current stage
             instruction.runCallbacks(name);
+            stageDataMap.get(this).setInstruction("");
 
             // Wait for next stage to be available
             if (nextStage != null) {
@@ -735,6 +756,7 @@ public class Pipeline implements NotifyAvailable {
             nextStageAvailable = true;
 
             if (instruction != null && finishedRun && !stalled) {
+                stageDataMap.get(this).setInstruction("");
                 runOnNextStage();
             }
         }
@@ -750,6 +772,25 @@ public class Pipeline implements NotifyAvailable {
             binStr = (a <= b ? "1" : "0") + binStr; // LTE
 
             return Integer.parseInt(binStr, 2);
+        }
+    }
+
+    public class StageData {
+        private SimpleStringProperty name, instruction;
+        private StageData(String name) {
+            this.name = new SimpleStringProperty(name);
+            this.instruction = new SimpleStringProperty("");
+        }
+
+        public void setInstruction(String instruction) {
+            this.instruction.set(instruction);
+        }
+
+        public SimpleStringProperty nameProperty() {
+            return name;
+        }
+        public SimpleStringProperty instructionProperty() {
+            return instruction;
         }
     }
 }
