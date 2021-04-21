@@ -1,5 +1,6 @@
 //Cache num of lines should be multiples of 4
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
@@ -134,6 +135,15 @@ public class Demo extends Application {
         TextField fileField = new TextField ();
         Button runBtn = new Button("Run");
 
+        Label usePipeLabel = new Label("Pipeline");
+        CheckBox usePipeCB = new CheckBox();
+        usePipeCB.setSelected(true);
+        Label useCacheLabel = new Label("Cache");
+        CheckBox useCacheCB = new CheckBox();
+        useCacheCB.setSelected(true);
+
+        Label programTimeLabel = new Label("");
+
         runBtn.setOnMouseClicked(event -> {
             String fileName = fileField.getText();
 
@@ -142,8 +152,14 @@ public class Demo extends Application {
                 loadInstructions(24000, "Programs/" + fileName, false);
                 System.out.println(fileName + " loaded into memory");
 
-                pipeline.run(24000, true, () -> {
+                final long startTime = System.currentTimeMillis();
+
+                pipeline.run(24000, usePipeCB.isSelected(), () -> {
                     System.out.println("Finished running " + fileName);
+
+                    Platform.runLater(() -> {
+                        programTimeLabel.setText(fileName + " ran in " + (System.currentTimeMillis() - startTime) / 1000.0 + "s");
+                    });
                 });
             } catch (IOException e) {
                 System.out.println("No program called " + fileName);
@@ -170,12 +186,12 @@ public class Demo extends Application {
         pipelineTable.setFocusTraversable(false);
 
         HBox hb = new HBox(10);
-        hb.getChildren().addAll(fileNameLabel, fileField, runBtn);
+        hb.getChildren().addAll(fileNameLabel, fileField, usePipeLabel, usePipeCB, useCacheLabel, useCacheCB, runBtn);
         hb.setAlignment(Pos.CENTER_LEFT);
 
         VBox vb = new VBox(10);
         vb.setStyle("-fx-padding: 12 12 12 12;");
-        vb.getChildren().addAll(hb, pipelineTable);
+        vb.getChildren().addAll(hb, programTimeLabel, pipelineTable);
 
         return vb;
     }
