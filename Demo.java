@@ -1,30 +1,36 @@
 //Cache num of lines should be multiples of 4
 import javafx.application.Application;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ObservableValue;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 
 public class Demo extends Application {
-    private Label instructionLabel;
-
     private Memory RAM;
     private Cache cache;
     private Registers registers;
     private VectorRegisters vectorRegisters;
     private Pipeline pipeline;
+
+    private TableView<Pipeline.StageData> pipelineTable;
+    private TableView<VectorRegisters.VRData> vecTable;
+    private TableView<Cache.LineData> cacheTable;
+    private TableView registersTable;
 
     public static void main(String[] args) {
         launch(args);
@@ -38,7 +44,169 @@ public class Demo extends Application {
         // Sets up memory and pipeline
         setup();
 
-        TableView registersTable = new TableView();
+        TabPane tabPane = new TabPane();
+        Tab regCacheTab = new Tab("Register/Cache", new Label("Show registers and cache data"));
+        Tab vectorRegTab = new Tab("Vector Registers"  , new Label("Show vector registers content"));
+        Tab pipelineTab = new Tab("Pipeline" , new Label("Show pipeline"));
+
+        vectorRegTab.setClosable(false);
+        regCacheTab.setClosable(false);
+        pipelineTab.setClosable(false);
+
+        tabPane.getTabs().add(pipelineTab);
+        tabPane.getTabs().add(regCacheTab);
+        tabPane.getTabs().add(vectorRegTab);
+
+        pipelineTab.setContent(getPipelineUI());
+        regCacheTab.setContent(getRegCacheUI());
+        vectorRegTab.setContent(getVectorRegUI());
+
+        ((Group) scene.getRoot()).getChildren().addAll(tabPane);
+
+        stage.setScene(scene);
+        stage.show();
+//        runInstructions();
+
+    }
+
+    public void setup() {
+        RAM = new Memory(8000, 4);
+        cache = new Cache(16, RAM);
+        registers = new Registers(16);
+        vectorRegisters = new VectorRegisters(16,16);
+        pipeline = new Pipeline(registers,vectorRegisters, cache, RAM);
+
+        if (cacheTable != null) {
+            cacheTable.setItems(cache.lineData);
+            registersTable.setItems(registers.registerData);
+            vecTable.setItems(vectorRegisters.vrData);
+            pipelineTable.setItems(pipeline.stageData);
+        }
+    }
+
+    // Load demo instructions and run them in pipeline
+    public void runInstructions() {
+
+        try {
+            loadInstructions(24000, "vector_demo_txt.txt", false);
+//            loadInstructions(24000, "vector_demo.txt", true);
+        } catch (IOException e) { return; }
+
+        System.out.println("LOADED PROGRAM INTO MEMORY");
+        RAM.printData(24000, 24008);
+        System.out.println();
+
+        pipeline.run(24000, true, () -> {
+            System.out.println("\n-~-~- Program Completed -~-~-");
+//            RAM.printData(0, 3);
+
+            vectorRegisters.print(0);
+            vectorRegisters.print(1);
+            vectorRegisters.print(2);
+        });
+    }
+
+    public void loadInstructions(int programAddress, String fileName, boolean isBinary) throws IOException {
+        int addr = programAddress;
+
+        try(BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            for(String line; (line = br.readLine()) != null; ) {
+                int instr = isBinary ? Integer.parseInt(line, 2) : Assembler.toBinary(line);
+                int out = Memory.WAIT;
+
+                while (out == Memory.WAIT) {
+                    out = RAM.write("Main", addr, instr);
+                }
+
+                addr += 1;
+            }
+        }
+
+        // Write END (-1) after program
+        int out = Memory.WAIT;
+        while (out == Memory.WAIT) {
+            out = RAM.write("Main", addr, Instruction.HALT);
+        }
+    }
+
+    private Node getPipelineUI() {
+        Label fileNameLabel = new Label("File Name:");
+        TextField fileField = new TextField ();
+        Button runBtn = new Button("Run");
+
+        runBtn.setOnMouseClicked(event -> {
+            String fileName = fileField.getText();
+
+            try {
+                setup(); // Reset environment
+                loadInstructions(24000, "Programs/" + fileName, false);
+                System.out.println(fileName + " loaded into memory");
+
+                pipeline.run(24000, true, () -> {
+                    System.out.println("Finished running " + fileName);
+                });
+            } catch (IOException e) {
+                System.out.println("No program called " + fileName);
+            }
+        });
+
+        pipelineTable = new TableView<>();
+        pipelineTable.setSelectionModel(null);
+
+        TableColumn<Pipeline.StageData, String> stgCol = new TableColumn<>("Stage");
+        stgCol.setCellValueFactory(new PropertyValueFactory<>("name"));
+        TableColumn<Pipeline.StageData, String> instrCol = new TableColumn<>("Instruction");
+        instrCol.setCellValueFactory(new PropertyValueFactory<>("instruction"));
+
+        stgCol.setSortable(false);
+        instrCol.setSortable(false);
+
+        pipelineTable.getColumns().addAll(stgCol, instrCol);
+        pipelineTable.setItems(pipeline.stageData);
+
+        pipelineTable.setMaxWidth(250);
+        pipelineTable.setMaxHeight(153);
+        pipelineTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        pipelineTable.setFocusTraversable(false);
+
+        HBox hb = new HBox(10);
+        hb.getChildren().addAll(fileNameLabel, fileField, runBtn);
+        hb.setAlignment(Pos.CENTER_LEFT);
+
+        VBox vb = new VBox(10);
+        vb.setStyle("-fx-padding: 12 12 12 12;");
+        vb.getChildren().addAll(hb, pipelineTable);
+
+        return vb;
+    }
+
+    private Node getVectorRegUI() {
+        vecTable = new TableView<>();
+        vecTable.setSelectionModel(null);
+
+        TableColumn labelCol = new TableColumn<>("#");
+        labelCol.setCellValueFactory(new PropertyValueFactory<VectorRegisters.VRData, String>("label"));
+
+        labelCol.setSortable(false);
+        labelCol.setMinWidth(50);
+        labelCol.setStyle( "-fx-alignment: CENTER;");
+
+        vecTable.getColumns().add(labelCol);
+
+        for (int i = 0; i < 16; i++) {
+            TableColumn tc = new TableColumn(i + "");
+            tc.setCellValueFactory(new PropertyValueFactory<VectorRegisters.VRData, String>("r" + i));
+            tc.setSortable(false);
+            tc.setPrefWidth(50);
+            vecTable.getColumns().add(tc);
+        }
+
+        vecTable.setItems(vectorRegisters.vrData);
+        return vecTable;
+    }
+
+    private Node getRegCacheUI() {
+        registersTable = new TableView();
         registersTable.setSelectionModel(null);
 
         TableColumn labelCol = new TableColumn("#");
@@ -63,6 +231,7 @@ public class Demo extends Application {
                 };
             }
         });
+        labelCol.setSortable(false);
 
         labelCol.setMaxWidth(1200);
         labelCol.setStyle( "-fx-alignment: CENTER;");
@@ -70,6 +239,7 @@ public class Demo extends Application {
         TableColumn registerCol = new TableColumn("Value");
         registerCol.setCellValueFactory(c -> ((TableColumn.CellDataFeatures)c).getValue());
         registerCol.setStyle( "-fx-alignment: CENTER;");
+        registerCol.setSortable(false);
 
         registersTable.getColumns().addAll(labelCol, registerCol);
         registersTable.setItems(registers.registerData);
@@ -79,25 +249,33 @@ public class Demo extends Application {
         registersTable.setFocusTraversable(false);
         registersTable.refresh();
 
-        TableView cacheTable = new TableView();
+        cacheTable = new TableView<>();
         cacheTable.setSelectionModel(null);
 
-        TableColumn lruCol = new TableColumn("LRU");
-        lruCol.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("lru"));
-        TableColumn tagCol = new TableColumn("TAG");
-        tagCol.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("tag"));
-        TableColumn dirtyCol = new TableColumn("D");
-        dirtyCol.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("dirty"));
-        TableColumn validCol = new TableColumn("V");
-        validCol.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("v"));
-        TableColumn w1Col = new TableColumn("Word 1");
-        w1Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("word1"));
-        TableColumn w2Col = new TableColumn("Word 2");
-        w2Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("word2"));
-        TableColumn w3Col = new TableColumn("Word 3");
-        w3Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("word3"));
-        TableColumn w4Col = new TableColumn("Word 4");
-        w4Col.setCellValueFactory(new PropertyValueFactory<Cache.LineData, Integer>("word4"));
+        TableColumn<Cache.LineData, Integer> lruCol = new TableColumn<Cache.LineData, Integer>("LRU");
+        lruCol.setCellValueFactory(new PropertyValueFactory<>("lru"));
+        TableColumn<Cache.LineData, Integer> tagCol = new TableColumn<>("TAG");
+        tagCol.setCellValueFactory(new PropertyValueFactory<>("tag"));
+        TableColumn<Cache.LineData, Integer> dirtyCol = new TableColumn<>("D");
+        dirtyCol.setCellValueFactory(new PropertyValueFactory<>("dirty"));
+        TableColumn<Cache.LineData, Integer> validCol = new TableColumn<>("V");
+        validCol.setCellValueFactory(new PropertyValueFactory<>("v"));
+        TableColumn<Cache.LineData, Integer> w1Col = new TableColumn<>("Word 1");
+        w1Col.setCellValueFactory(new PropertyValueFactory<>("word1"));
+        TableColumn<Cache.LineData, Integer> w2Col = new TableColumn<>("Word 2");
+        w2Col.setCellValueFactory(new PropertyValueFactory<>("word2"));
+        TableColumn<Cache.LineData, Integer> w3Col = new TableColumn<>("Word 3");
+        w3Col.setCellValueFactory(new PropertyValueFactory<>("word3"));
+        TableColumn<Cache.LineData, Integer> w4Col = new TableColumn<>("Word 4");
+        w4Col.setCellValueFactory(new PropertyValueFactory<>("word4"));
+
+        lruCol.setSortable(false);
+        tagCol.setSortable(false);
+        dirtyCol.setSortable(false);
+        w1Col.setSortable(false);
+        w2Col.setSortable(false);
+        w3Col.setSortable(false);
+        w4Col.setSortable(false);
 
         cacheTable.getColumns().addAll(lruCol, tagCol, dirtyCol, validCol, w1Col, w2Col, w3Col, w4Col);
         cacheTable.setItems(cache.lineData);
@@ -109,98 +287,6 @@ public class Demo extends Application {
         hBox.setPadding(new Insets(10, 10, 10, 10));
         hBox.getChildren().addAll(registersTable, cacheTable);
 
-        ((Group) scene.getRoot()).getChildren().addAll(hBox);
-
-        stage.setScene(scene);
-        stage.show();
-        cache.directWrite(0,new int[]{100,20,10,11},0,"Demo",true);
-       runInstructions();
-
+        return hBox;
     }
-
-    public void setup() {
-        RAM = new Memory(8000, 4);
-        cache = new Cache(16, RAM);
-        registers = new Registers(16);
-        vectorRegisters = new VectorRegisters(16,16);
-        pipeline = new Pipeline(registers,vectorRegisters, cache, RAM);
-    }
-
-    // Load demo instructions and run them in pipeline
-    public void runInstructions() {
-
-        /*try {
-            loadInstructionsStr(24000, "loop_demo_txt.txt");
-        } catch (IOException e) { return; }*/
-
-        try{
-            loadInstructionsBinary(24000,"demo2.txt");
-        }catch (IOException e) { return; }
-
-        System.out.println("LOADED PROGRAM INTO MEMORY");
-        RAM.printData(24000, 24008);
-        System.out.println();
-
-        pipeline.run(24000, true, () -> {
-            System.out.println("\n-~-~- Program Completed -~-~-");
-            RAM.printData(0, 3);
-            ArrayList<Integer> val = vectorRegisters.get(0);
-            for(int k = 0; k < val.size();k++)
-                System.out.println("Vector at point: "+k+" is: "+ val.get(k));
-            val = vectorRegisters.get(1);
-            for(int k = 0; k < val.size();k++)
-                System.out.println("Vector at point: "+k+" is: "+ val.get(k));
-            val = vectorRegisters.get(2);
-            for(int k = 0; k < val.size();k++)
-                System.out.println("Vector at point: "+k+" is: "+ val.get(k));
-        });
-    }
-
-    public void loadInstructionsStr(int programAddress, String fileName) throws IOException {
-        int addr = programAddress;
-
-        try(BufferedReader br = new BufferedReader(new FileReader(fileName))) {
-            for(String line; (line = br.readLine()) != null; ) {
-                int instr = Assembler.toBinary(line);
-                int out = Memory.WAIT;
-
-                while (out == Memory.WAIT) {
-                    out = RAM.write("Main", addr, instr);
-                }
-
-                addr += 1;
-            }
-        }
-
-        // Write END (-1) after program
-        int out = Memory.WAIT;
-        while (out == Memory.WAIT) {
-            out = RAM.write("Main", addr, Instruction.HALT);
-        }
-    }
-
-    // Loads instructions from file into RAM at programAddress
-    public void loadInstructionsBinary(int programAddress, String fileName) throws IOException {
-        int addr = programAddress;
-
-        try(BufferedReader br = new BufferedReader(new FileReader(fileName))) {
-            for(String line; (line = br.readLine()) != null; ) {
-                int instr = Integer.parseInt(line, 2);
-                int out = Memory.WAIT;
-
-                while (out == Memory.WAIT) {
-                    out = RAM.write("Main", addr, instr);
-                }
-
-                addr += 1;
-            }
-        }
-
-        // Write END (-1) after program
-        int out = Memory.WAIT;
-        while (out == Memory.WAIT) {
-            out = RAM.write("Main", addr, Instruction.HALT);
-        }
-    }
-
 }

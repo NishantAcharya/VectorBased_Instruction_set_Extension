@@ -6,6 +6,7 @@ public class Instruction {
     public static final int HALT = 0b00001111000000000000000000000000;
 
     private HashMap<Integer, String> opMap;
+    private HashMap<Integer, String> opMapV;
     private HashMap<Integer, String> condMap;
     private final HashMap<String, Runnable> callbacks;
 
@@ -17,8 +18,8 @@ public class Instruction {
 
     private String binaryValue;
     private String strValue;
-    private int type;
-    private int opCode;
+    private int type = -1;
+    private int opCode = -1;
     private int condCode;
     private int linkCode = -1; //Setting the link code to an invalid value
     private int vectorLength = -1;
@@ -53,6 +54,7 @@ public class Instruction {
         dependsOnRegisters = new ArrayList<>();
 
         this.buildOpMap();
+        this.buildOpMapV();
         this.buildCondMap();
     }
 
@@ -171,9 +173,7 @@ public class Instruction {
     }
 
     public void decode() {
-        int instr = 0;
-
-        instr = Integer.parseInt(binaryValue, 2);
+        int instr = Integer.parseInt(binaryValue, 2);
 
         this.type =   (instr & 0b00001111000000000000000000000000) >> 24;
         this.opCode = (instr & 0b00000000111100000000000000000000) >> 20;
@@ -308,16 +308,16 @@ public class Instruction {
                 params.add(r_d);
                 params.add(r_1);
 
+                if (opCode != 7) // Immediate if append
+                    dependsOnRegisters.add(r_1 + 100);
 
-                dependsOnRegisters.add(r_1);
-
-                if (opCode == 13) {
-                    stallRegisters.add(r_d);
-                } else {
-                    dependsOnRegisters.add(r_d);
+                if (opCode == 13 || opCode == 7) {
+                    stallRegisters.add(r_d + 100);
+                } else if (opCode == 14) {
+                    dependsOnRegisters.add(r_d + 100);
                 }
 
-                this.strValue = opMap.get(opCode) + " V" + r_d + " V" + r_1;
+                this.strValue = opMapV.get(opCode) + " V" + r_d + (opCode == 7 ? " " : " V") + r_1;
                 break;
             case 9: // Vector Data Processing with 3 operands (Vd = V1 + V2)
                 r_d = (instr & 0b00000000000001111000000000000000) >> 15;
@@ -330,13 +330,13 @@ public class Instruction {
                 params.add(r_1);
                 params.add(r_2);
 
-                stallRegisters.add(r_d);
-                dependsOnRegisters.add(r_1);
-                dependsOnRegisters.add(r_2);
+                stallRegisters.add(r_d + 100);
+                dependsOnRegisters.add(r_1 + 100);
+                dependsOnRegisters.add(r_2 + 100);
 
-                this.strValue = opMap.get(opCode) + (opCode == 12 ? "" : " V" + r_d) + " V" + r_1 + " V" + r_2;
+                this.strValue = opMapV.get(opCode) + (opCode == 12 ? "" : " V" + r_d) + " V" + r_1 + " V" + r_2;
                 break;
-            case 10: // Data Processing with operand and immediate (rd = r1 + 3)
+            case 10: // Vector Data Processing with operand and immediate (rd = r1 + 3)
                 r_d = (instr & 0b00000000000001111000000000000000) >> 15;
                 r_1 = (instr & 0b00000000000000000111100000000000) >> 11;
                 imm = (instr & 0b00000000000000000000011111100000) >> 5;
@@ -347,10 +347,10 @@ public class Instruction {
                 params.add(r_1);
                 params.add(imm);
 
-                stallRegisters.add(r_d);
-                dependsOnRegisters.add(r_1);
+                stallRegisters.add(r_d + 100);
+                dependsOnRegisters.add(r_1 + 100);
 
-                this.strValue = opMap.get(opCode) + (opCode == 12 ? "" : " V" + r_d) + " V" + r_1 + " " + imm;
+                this.strValue = opMapV.get(opCode) + (opCode == 12 ? "" : " V" + r_d) + " V" + r_1 + " " + imm;
                 break;
             default:
                 this.strValue = "INVALID TYPE";
@@ -387,6 +387,17 @@ public class Instruction {
         opMap.put(7, "BRANCH");
     }
 
+    private void buildOpMapV() {
+        opMapV = new HashMap<>();
+        opMapV.put(0, "ADD");
+        opMapV.put(1, "SUBTRACT");
+        opMapV.put(2, "MULTIPLY");
+        opMapV.put(4, "DIVIDE");
+        opMapV.put(13, "LOAD");
+        opMapV.put(14, "STORE");
+        opMapV.put(7, "APPEND");
+    }
+
     private void buildCondMap() {
         condMap = new HashMap<>();
         condMap.put(0, "EQ");
@@ -403,10 +414,6 @@ public class Instruction {
 
     public int getCondCode() {
         return condCode;
-    }
-
-    public void setCondCode(int condCode) {
-        this.condCode = condCode;
     }
 
     public class AddressValuePair {

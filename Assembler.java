@@ -4,22 +4,25 @@ import java.util.HashMap;
 
 public class Assembler {
 
-    private static HashMap<String, Integer> opMap, condMap;
+    private static HashMap<String, Integer> opMap, opMapV, condMap;
 
     public static int toBinary(String line) {
         setupHashMaps();
 
-        String[] tokens = line.split(" ");
+        String[] tokens = line.toUpperCase().split(" ");
+
+        boolean isVectorInst = isVectorInstruction(tokens);
+        return  isVectorInst ? getVectorInstrBinary(tokens) : getInstrBinary(tokens);
+    }
+
+    private static int getInstrBinary(String[] tokens) {
         int op = opMap.get(tokens[0]);
         int type = getType(op, tokens);
 
         int binary = 0;
         binary = binary | (type << 24);
 
-        if (op != 7) { // Non-branching instructions
-            // Insert op code
-            binary = binary | (op << 20);
-        } else { // Branch instructions
+        if (op == 7) { // Branching instructions
             if (tokens.length > 2) {
                 // Insert condition code
                 int cond = condMap.get(tokens[3]);
@@ -36,9 +39,12 @@ public class Assembler {
             return binary;
         }
 
-        int op1 = tokens.length < 2 ? -9999 : Integer.parseInt(tokens[1].toUpperCase().replace("R", ""));
-        int op2 = tokens.length < 3 ? -9999 : Integer.parseInt(tokens[2].toUpperCase().replace("R", ""));
-        int op3 = tokens.length < 4 ? -9999 : Integer.parseInt(tokens[3].toUpperCase().replace("R", ""));
+        // Insert op code
+        binary = binary | (op << 20);
+
+        int op1 = tokens.length < 2 ? -1 : Integer.parseInt(tokens[1].replaceAll("[^\\d.]", ""));
+        int op2 = tokens.length < 3 ? -1 : Integer.parseInt(tokens[2].replaceAll("[^\\d.]", ""));
+        int op3 = tokens.length < 4 ? -1 : Integer.parseInt(tokens[3].replaceAll("[^\\d.]", ""));
 
         if (op == 12) { // Compare
             if (type == 0) {
@@ -69,6 +75,44 @@ public class Assembler {
         return binary;
     }
 
+    private static int getVectorInstrBinary(String[] tokens) {
+        int op = opMapV.get(tokens[0]);
+        int type = getVectorType(op, tokens);
+
+        int binary = 0;
+        binary = binary | (type << 24);
+        binary = binary | (op << 20);
+
+        int op1 = tokens.length < 2 ? -1 : Integer.parseInt(tokens[1].replaceAll("[^\\d.]", ""));
+        int op2 = tokens.length < 3 ? -1 : Integer.parseInt(tokens[2].replaceAll("[^\\d.]", ""));
+        int op3 = tokens.length < 4 ? -1 : Integer.parseInt(tokens[3].replaceAll("[^\\d.]", ""));
+        int op4 = tokens.length < 5 ? -1 : Integer.parseInt(tokens[4].replaceAll("[^\\d.]", ""));
+
+        if (type == 8) {
+            binary = binary | (op1 << 15);
+            binary = binary | (op2 << 11);
+
+            if (op3 != -1)
+                binary = binary | (op3 << 6);
+        } else if (type == 9) {
+            binary = binary | (op1 << 15);
+            binary = binary | (op2 << 11);
+            binary = binary | (op3 << 7);
+
+            if (op4 != -1)
+                binary = binary | (op4 << 2);
+        } else if (type == 10) {
+            binary = binary | (op1 << 15);
+            binary = binary | (op2 << 11);
+            binary = binary | (op3 << 5);
+
+            if (op4 != -1)
+                binary = binary | op4;
+        }
+
+        return binary;
+    }
+
     private static int getType(int op, String[] tokens) {
         if (op == 7) // Branch instruction
             return 7;
@@ -81,6 +125,13 @@ public class Assembler {
 
             return tokens[3].startsWith("R") ? 0 : 3;
         }
+    }
+
+    private static int getVectorType(int op, String[] tokens) {
+        if (op == 13 || op == 14 || op == 7)
+            return 8;
+        else
+            return tokens[3].startsWith("V") ? 9 : 10;
     }
 
     private static void setupHashMaps() {
@@ -102,6 +153,15 @@ public class Assembler {
         opMap.put("STORE", 14);
         opMap.put("BRANCH", 7);
 
+        opMapV = new HashMap<>();
+        opMapV.put("ADD", 0);
+        opMapV.put("SUBTRACT", 1);
+        opMapV.put("MULTIPLY", 2);
+        opMapV.put("DIVIDE", 4);
+        opMapV.put("LOAD", 13);
+        opMapV.put("STORE", 14);
+        opMapV.put("APPEND", 7);
+
         condMap = new HashMap<>();
         condMap.put("EQ", 0);
         condMap.put("NE", 1);
@@ -109,6 +169,14 @@ public class Assembler {
         condMap.put("GTE", 3);
         condMap.put("LT", 4);
         condMap.put("LTE", 5);
+    }
+
+    private static boolean isVectorInstruction(String[] tokens) {
+        for (int i = 1; i < tokens.length; i++)
+            if (tokens[i].startsWith("V") && !tokens[i].startsWith("VALAT"))
+                return true;
+
+        return false;
     }
 
     public static void main(String[] args) {
