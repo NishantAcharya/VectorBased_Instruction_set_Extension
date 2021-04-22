@@ -10,8 +10,6 @@ import java.util.HashMap;
 public class Pipeline implements NotifyAvailable {
 
     private final Stage[] stages;
-    public ObservableList<StageData> stageData;
-    private HashMap<Stage, StageData> stageDataMap;
 
     private boolean firstStageAvailable = true;
     private boolean runningProgram = false;
@@ -42,18 +40,6 @@ public class Pipeline implements NotifyAvailable {
         Stage stage1 = new Stage("Fetch", stage2);
 
         stages = new Stage[] { stage1, stage2, stage3, stage4, stage5 };
-
-        ArrayList<StageData> sdTemp = new ArrayList<>();
-        stageDataMap = new HashMap<>();
-
-        for (Stage s: stages) {
-            StageData sd = new StageData(s.name);
-
-            sdTemp.add(sd);
-            stageDataMap.put(s, sd);
-        }
-
-        stageData = FXCollections.observableList(sdTemp);
     }
 
     int instrID = 0;
@@ -129,11 +115,11 @@ public class Pipeline implements NotifyAvailable {
 
             this.finishedRun = false;
             this.instruction = i;
-            stageDataMap.get(this).setInstruction(i.toString());
 
             Instruction dependsOnInstr = null;
 
             System.out.println("INSTR_" + i.id + ": Running at " + name + ": " + i);
+            Main.print("INSTR_" + i.id + ": Running at " + name + ": " + i);
 
             // Checking which version of run to go with
             switch (name) {
@@ -679,10 +665,10 @@ public class Pipeline implements NotifyAvailable {
 
             if (instruction.toString().equals("HALT")) {
                 System.out.println("Reached HALT Instruction (INSTR_" + instruction.id + ")");
+                Main.print("Reached HALT Instruction (INSTR_" + instruction.id + ")");
                 endID = instruction.id;
 
                 this.instruction = null;
-                stageDataMap.get(this).setInstruction("");
                 this.finishedRun = true;
 
                 runningProgram = false;
@@ -691,9 +677,11 @@ public class Pipeline implements NotifyAvailable {
 
             if (dependsOnInstr != null) {
                 System.out.println("INSTR_" + instruction.id + ": Stalled until INSTR_" + dependsOnInstr.id + " writes back");
+                Main.print("INSTR_" + instruction.id + ": Stalled until INSTR_" + dependsOnInstr.id + " writes back");
 
                 dependsOnInstr.addCallback("Write Back", () -> {
                     System.out.println("INSTR_" + instruction.id + ": No longer stalled");
+                    Main.print("INSTR_" + instruction.id + ": No longer stalled");
 
                     stalled = false;
                     stageFinished();
@@ -706,7 +694,6 @@ public class Pipeline implements NotifyAvailable {
         private void stageFinished() {
             // Checks if there are any callbacks associated with current stage
             instruction.runCallbacks(name);
-            stageDataMap.get(this).setInstruction("");
 
             // Wait for next stage to be available
             if (nextStage != null) {
@@ -718,6 +705,7 @@ public class Pipeline implements NotifyAvailable {
 
                 // Last stage of pipeline
                 System.out.println("INSTR_" + instruction.id + ": Pipeline finished");
+                Main.print("INSTR_" + instruction.id + ": Pipeline finished");
                 notifyLastStage();
 
                 if (instruction.id >= endID - 1)
@@ -756,7 +744,6 @@ public class Pipeline implements NotifyAvailable {
             nextStageAvailable = true;
 
             if (instruction != null && finishedRun && !stalled) {
-                stageDataMap.get(this).setInstruction("");
                 runOnNextStage();
             }
         }
@@ -772,25 +759,6 @@ public class Pipeline implements NotifyAvailable {
             binStr = (a <= b ? "1" : "0") + binStr; // LTE
 
             return Integer.parseInt(binStr, 2);
-        }
-    }
-
-    public class StageData {
-        private SimpleStringProperty name, instruction;
-        private StageData(String name) {
-            this.name = new SimpleStringProperty(name);
-            this.instruction = new SimpleStringProperty("");
-        }
-
-        public void setInstruction(String instruction) {
-            this.instruction.set(instruction);
-        }
-
-        public SimpleStringProperty nameProperty() {
-            return name;
-        }
-        public SimpleStringProperty instructionProperty() {
-            return instruction;
         }
     }
 }

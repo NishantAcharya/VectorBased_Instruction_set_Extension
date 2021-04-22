@@ -1,36 +1,47 @@
 //Cache num of lines should be multiples of 4
 import javafx.application.Application;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.value.ObservableValue;
-import javafx.event.EventHandler;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
+import java.awt.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
-public class Demo extends Application {
+public class Main extends Application {
+    private static Main instance = null;
+
     private Memory RAM;
     private Cache cache;
     private Registers registers;
     private VectorRegisters vectorRegisters;
     private Pipeline pipeline;
 
-    private TableView<Pipeline.StageData> pipelineTable;
     private TableView<VectorRegisters.VRData> vecTable;
     private TableView<Cache.LineData> cacheTable;
     private TableView registersTable;
+
+    private Text programTxt;
+    private Text consoleTxt;
+
+    private String consoleOutput = "";
 
     public static void main(String[] args) {
         launch(args);
@@ -38,6 +49,8 @@ public class Demo extends Application {
 
     @Override
     public void start(Stage stage) {
+        instance = this;
+
         Scene scene = new Scene(new Group());
         stage.setTitle("Demo");
 
@@ -47,17 +60,17 @@ public class Demo extends Application {
         TabPane tabPane = new TabPane();
         Tab regCacheTab = new Tab("Register/Cache", new Label("Show registers and cache data"));
         Tab vectorRegTab = new Tab("Vector Registers"  , new Label("Show vector registers content"));
-        Tab pipelineTab = new Tab("Pipeline" , new Label("Show pipeline"));
+        Tab mainTab = new Tab("Main" , new Label("Basic program controls"));
 
         vectorRegTab.setClosable(false);
         regCacheTab.setClosable(false);
-        pipelineTab.setClosable(false);
+        mainTab.setClosable(false);
 
-        tabPane.getTabs().add(pipelineTab);
+        tabPane.getTabs().add(mainTab);
         tabPane.getTabs().add(regCacheTab);
         tabPane.getTabs().add(vectorRegTab);
 
-        pipelineTab.setContent(getPipelineUI());
+        mainTab.setContent(getMainUI());
         regCacheTab.setContent(getRegCacheUI());
         vectorRegTab.setContent(getVectorRegUI());
 
@@ -80,7 +93,6 @@ public class Demo extends Application {
             cacheTable.setItems(cache.lineData);
             registersTable.setItems(registers.registerData);
             vecTable.setItems(vectorRegisters.vrData);
-            pipelineTable.setItems(pipeline.stageData);
         }
     }
 
@@ -88,7 +100,7 @@ public class Demo extends Application {
     public void runInstructions() {
 
         try {
-            loadInstructions(24000, "vector_demo_txt.txt", false);
+            loadInstructions(24000, "vector.txt", false);
 //            loadInstructions(24000, "vector_demo.txt", true);
         } catch (IOException e) { return; }
 
@@ -106,11 +118,14 @@ public class Demo extends Application {
         });
     }
 
-    public void loadInstructions(int programAddress, String fileName, boolean isBinary) throws IOException {
+    public String loadInstructions(int programAddress, String fileName, boolean isBinary) throws IOException {
         int addr = programAddress;
+        StringBuilder programText = new StringBuilder();
 
         try(BufferedReader br = new BufferedReader(new FileReader(fileName))) {
             for(String line; (line = br.readLine()) != null; ) {
+                programText.append((programText.length() == 0) ? line : "\n" + line);
+
                 int instr = isBinary ? Integer.parseInt(line, 2) : Assembler.toBinary(line);
                 int out = Memory.WAIT;
 
@@ -127,55 +142,95 @@ public class Demo extends Application {
         while (out == Memory.WAIT) {
             out = RAM.write("Main", addr, Instruction.HALT);
         }
+
+        return programText.toString();
     }
 
-    private Node getPipelineUI() {
+    private Node getMainUI() {
         Label fileNameLabel = new Label("File Name:");
         TextField fileField = new TextField ();
         Button runBtn = new Button("Run");
 
+        Label usePipeLabel = new Label("Pipeline");
+        CheckBox usePipeCB = new CheckBox();
+        usePipeCB.setSelected(true);
+        Label useCacheLabel = new Label("Cache");
+        CheckBox useCacheCB = new CheckBox();
+        useCacheCB.setSelected(true);
+
+        Label programTimeLabel = new Label("");
+
         runBtn.setOnMouseClicked(event -> {
-            String fileName = fileField.getText();
+            String fname = fileField.getText();
+            String fileName = fname.endsWith(".txt") ? fname : fname + ".txt";
 
             try {
                 setup(); // Reset environment
-                loadInstructions(24000, "Programs/" + fileName, false);
+                String loaded = loadInstructions(24000, "Programs/" + fileName, false);
                 System.out.println(fileName + " loaded into memory");
 
-                pipeline.run(24000, true, () -> {
+                consoleOutput = "";
+                programTxt.setText(loaded);
+
+                final long startTime = System.currentTimeMillis();
+
+                pipeline.run(24000, usePipeCB.isSelected(), () -> {
                     System.out.println("Finished running " + fileName);
+
+                    Platform.runLater(() -> {
+                        programTimeLabel.setText(fileName + " ran in " + (System.currentTimeMillis() - startTime) / 1000.0 + "s");
+                    });
                 });
             } catch (IOException e) {
-                System.out.println("No program called " + fileName);
+                programTimeLabel.setText("No program called \"" + fileName + "\"");
             }
         });
 
-        pipelineTable = new TableView<>();
-        pipelineTable.setSelectionModel(null);
-
-        TableColumn<Pipeline.StageData, String> stgCol = new TableColumn<>("Stage");
-        stgCol.setCellValueFactory(new PropertyValueFactory<>("name"));
-        TableColumn<Pipeline.StageData, String> instrCol = new TableColumn<>("Instruction");
-        instrCol.setCellValueFactory(new PropertyValueFactory<>("instruction"));
-
-        stgCol.setSortable(false);
-        instrCol.setSortable(false);
-
-        pipelineTable.getColumns().addAll(stgCol, instrCol);
-        pipelineTable.setItems(pipeline.stageData);
-
-        pipelineTable.setMaxWidth(250);
-        pipelineTable.setMaxHeight(153);
-        pipelineTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        pipelineTable.setFocusTraversable(false);
-
         HBox hb = new HBox(10);
-        hb.getChildren().addAll(fileNameLabel, fileField, runBtn);
+        hb.getChildren().addAll(fileNameLabel, fileField, usePipeLabel, usePipeCB, useCacheLabel, useCacheCB, runBtn, programTimeLabel);
         hb.setAlignment(Pos.CENTER_LEFT);
 
-        VBox vb = new VBox(10);
+        programTxt = new Text();
+        consoleTxt = new Text();
+
+        programTxt.setFont(Font.font("monospaced", FontWeight.NORMAL, 14));
+        consoleTxt.setFont(Font.font("monospaced", FontWeight.NORMAL, 14));
+
+        Label programLabel = new Label("Program");
+        Label consoleLabel = new Label("Output");
+
+        programLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        consoleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+
+        VBox programVB = new VBox(5);
+        VBox consoleVB = new VBox(5);
+
+        ScrollPane programScroll = new ScrollPane();
+        programScroll.setStyle("-fx-padding: 5 5 5 5;");
+        programScroll.setContent(programTxt);
+
+        ScrollPane consoleScroll = new ScrollPane();
+        consoleScroll.setStyle("-fx-padding: 5 5 5 5;");
+        consoleScroll.setContent(consoleTxt);
+
+        programVB.getChildren().addAll(programLabel, programScroll);
+        consoleVB.getChildren().addAll(consoleLabel, consoleScroll);
+
+        HBox hb2 = new HBox(10);
+        hb2.setPrefHeight(375);
+        hb2.getChildren().addAll(programVB, consoleVB);
+
+        HBox.setHgrow(programVB, Priority.ALWAYS);
+        HBox.setHgrow(consoleVB, Priority.ALWAYS);
+        programVB.setPrefWidth(hb2.getPrefWidth()/2);
+        consoleVB.setPrefWidth(hb2.getPrefWidth()/2);
+
+        VBox.setVgrow(programScroll, Priority.ALWAYS);
+        VBox.setVgrow(consoleScroll, Priority.ALWAYS);
+
+        VBox vb = new VBox(20);
         vb.setStyle("-fx-padding: 12 12 12 12;");
-        vb.getChildren().addAll(hb, pipelineTable);
+        vb.getChildren().addAll(hb, hb2);
 
         return vb;
     }
@@ -288,5 +343,14 @@ public class Demo extends Application {
         hBox.getChildren().addAll(registersTable, cacheTable);
 
         return hBox;
+    }
+
+    public static void print(String output) {
+        if (instance == null) return;
+
+        instance.consoleOutput = output + (instance.consoleOutput.isEmpty() ? "" : "\n") + instance.consoleOutput;
+        Platform.runLater(() -> {
+            instance.consoleTxt.setText(instance.consoleOutput);
+        });
     }
 }
