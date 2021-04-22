@@ -161,7 +161,8 @@ public class Main extends Application {
         Label programTimeLabel = new Label("");
 
         runBtn.setOnMouseClicked(event -> {
-            String fileName = fileField.getText();
+            String fname = fileField.getText();
+            String fileName = fname.endsWith(".txt") ? fname : fname + ".txt";
 
             try {
                 setup(); // Reset environment
