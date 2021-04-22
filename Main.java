@@ -24,6 +24,7 @@ import java.awt.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.text.ParseException;
 
 public class Main extends Application {
     private static Main instance = null;
@@ -37,6 +38,7 @@ public class Main extends Application {
     private TableView<VectorRegisters.VRData> vecTable;
     private TableView<Cache.LineData> cacheTable;
     private TableView registersTable;
+    private TableView<Memory.LineData> memoryTable;
 
     private Text programTxt;
     private Text consoleTxt;
@@ -59,20 +61,24 @@ public class Main extends Application {
 
         TabPane tabPane = new TabPane();
         Tab regCacheTab = new Tab("Register/Cache", new Label("Show registers and cache data"));
+        Tab memoryTab = new Tab("Memory", new Label("See content of RAM"));
         Tab vectorRegTab = new Tab("Vector Registers"  , new Label("Show vector registers content"));
         Tab mainTab = new Tab("Main" , new Label("Basic program controls"));
 
         vectorRegTab.setClosable(false);
+        memoryTab.setClosable(false);
         regCacheTab.setClosable(false);
         mainTab.setClosable(false);
 
         tabPane.getTabs().add(mainTab);
         tabPane.getTabs().add(regCacheTab);
         tabPane.getTabs().add(vectorRegTab);
+        tabPane.getTabs().add(memoryTab);
 
         mainTab.setContent(getMainUI());
         regCacheTab.setContent(getRegCacheUI());
         vectorRegTab.setContent(getVectorRegUI());
+        memoryTab.setContent(getMemoryUI());
 
         ((Group) scene.getRoot()).getChildren().addAll(tabPane);
 
@@ -93,6 +99,7 @@ public class Main extends Application {
             cacheTable.setItems(cache.lineData);
             registersTable.setItems(registers.registerData);
             vecTable.setItems(vectorRegisters.vrData);
+            memoryTable.setItems(RAM.lineData);
         }
     }
 
@@ -157,6 +164,8 @@ public class Main extends Application {
         Label useCacheLabel = new Label("Cache");
         CheckBox useCacheCB = new CheckBox();
         useCacheCB.setSelected(true);
+        Label resetLabel = new Label("Reset");
+        CheckBox resetCB = new CheckBox();
 
         Label programTimeLabel = new Label("");
 
@@ -165,7 +174,8 @@ public class Main extends Application {
             String fileName = fname.endsWith(".txt") ? fname : fname + ".txt";
 
             try {
-                setup(); // Reset environment
+                if (resetCB.isSelected())
+                    setup(); // Reset environment
                 String loaded = loadInstructions(24000, "Programs/" + fileName, false);
                 System.out.println(fileName + " loaded into memory");
 
@@ -176,6 +186,7 @@ public class Main extends Application {
 
                 pipeline.run(24000, usePipeCB.isSelected(), () -> {
                     System.out.println("Finished running " + fileName);
+                    memoryTable.refresh();
 
                     Platform.runLater(() -> {
                         programTimeLabel.setText(fileName + " ran in " + (System.currentTimeMillis() - startTime) / 1000.0 + "s");
@@ -187,7 +198,7 @@ public class Main extends Application {
         });
 
         HBox hb = new HBox(10);
-        hb.getChildren().addAll(fileNameLabel, fileField, usePipeLabel, usePipeCB, useCacheLabel, useCacheCB, runBtn, programTimeLabel);
+        hb.getChildren().addAll(fileNameLabel, fileField, usePipeLabel, usePipeCB, useCacheLabel, useCacheCB, resetLabel, resetCB, runBtn, programTimeLabel);
         hb.setAlignment(Pos.CENTER_LEFT);
 
         programTxt = new Text();
@@ -220,10 +231,8 @@ public class Main extends Application {
         hb2.setPrefHeight(375);
         hb2.getChildren().addAll(programVB, consoleVB);
 
-        HBox.setHgrow(programVB, Priority.ALWAYS);
         HBox.setHgrow(consoleVB, Priority.ALWAYS);
-        programVB.setPrefWidth(hb2.getPrefWidth()/2);
-        consoleVB.setPrefWidth(hb2.getPrefWidth()/2);
+        programVB.setPrefWidth(250);
 
         VBox.setVgrow(programScroll, Priority.ALWAYS);
         VBox.setVgrow(consoleScroll, Priority.ALWAYS);
@@ -279,7 +288,7 @@ public class Main extends Application {
                             if (row == 13) label = "CD";
                             else if (row == 14) label = "LR";
                             else if (row == 15) label = "PC";
-
+                            else if (row > 15) label = "";
                             setText(label);
                         }
                     }
@@ -343,6 +352,60 @@ public class Main extends Application {
         hBox.getChildren().addAll(registersTable, cacheTable);
 
         return hBox;
+    }
+
+    private Node getMemoryUI() {
+        memoryTable = new TableView<>();
+        memoryTable.setSelectionModel(null);
+
+        TableColumn<Memory.LineData, Integer> addrCol = new TableColumn<>("Address");
+        addrCol.setCellValueFactory(new PropertyValueFactory<>("lineAddr"));
+        TableColumn<Memory.LineData, Integer> w1Col = new TableColumn<>("Word 1");
+        w1Col.setCellValueFactory(new PropertyValueFactory<>("word1"));
+        TableColumn<Memory.LineData, Integer> w2Col = new TableColumn<>("Word 2");
+        w2Col.setCellValueFactory(new PropertyValueFactory<>("word2"));
+        TableColumn<Memory.LineData, Integer> w3Col = new TableColumn<>("Word 3");
+        w3Col.setCellValueFactory(new PropertyValueFactory<>("word3"));
+        TableColumn<Memory.LineData, Integer> w4Col = new TableColumn<>("Word 4");
+        w4Col.setCellValueFactory(new PropertyValueFactory<>("word4"));
+
+        addrCol.setMaxWidth(1400);
+        addrCol.setStyle( "-fx-alignment: CENTER;");
+
+        addrCol.setSortable(false);
+        w1Col.setSortable(false);
+        w2Col.setSortable(false);
+        w3Col.setSortable(false);
+        w4Col.setSortable(false);
+
+        memoryTable.getColumns().addAll(addrCol, w1Col, w2Col, w3Col, w4Col);
+        memoryTable.setItems(RAM.lineData);
+        memoryTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        memoryTable.setFocusTraversable(false);
+
+        Label jumpToLabel = new Label("Jump to address:");
+        TextField jumpToField = new TextField ();
+        Button goBtn = new Button("Go");
+
+        goBtn.setOnMouseClicked((event) -> {
+            try {
+                String jt = jumpToField.getText();
+                int jumpTo = Integer.parseInt(jt);
+
+                int row = jumpTo / 4;
+                memoryTable.scrollTo(row);
+            } catch (Exception e) { }
+        });
+
+        HBox hb = new HBox(10);
+        hb.getChildren().addAll(jumpToLabel, jumpToField, goBtn);
+        hb.setAlignment(Pos.CENTER_LEFT);
+
+        VBox vb = new VBox(10);
+        vb.getChildren().addAll(hb, memoryTable);
+        vb.setStyle("-fx-padding: 12 12 12 12;");
+
+        return vb;
     }
 
     public static void print(String output) {
