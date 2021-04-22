@@ -217,6 +217,7 @@ public class Main extends Application {
         consoleVB.getChildren().addAll(consoleLabel, consoleScroll);
 
         HBox hb2 = new HBox(10);
+        hb2.setPrefHeight(375);
         hb2.getChildren().addAll(programVB, consoleVB);
 
         HBox.setHgrow(programVB, Priority.ALWAYS);
@@ -230,8 +231,6 @@ public class Main extends Application {
         VBox vb = new VBox(20);
         vb.setStyle("-fx-padding: 12 12 12 12;");
         vb.getChildren().addAll(hb, hb2);
-
-        VBox.setVgrow(hb2, Priority.ALWAYS);
 
         return vb;
     }
