@@ -166,7 +166,6 @@ public class Main extends Application {
         useCacheCB.setSelected(true);
         Label resetLabel = new Label("Reset");
         CheckBox resetCB = new CheckBox();
-        resetCB.setSelected(true);
 
         Label programTimeLabel = new Label("");
 
@@ -289,7 +288,7 @@ public class Main extends Application {
                             if (row == 13) label = "CD";
                             else if (row == 14) label = "LR";
                             else if (row == 15) label = "PC";
-
+                            else if (row > 15) label = "";
                             setText(label);
                         }
                     }
