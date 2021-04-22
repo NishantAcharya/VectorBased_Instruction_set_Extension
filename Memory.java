@@ -1,7 +1,15 @@
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Random;
 
 public class Memory {
+
+    public ObservableList<LineData> lineData;
 
     public static int WAIT = -93902354;
     private int lineLength = 4;
@@ -11,20 +19,22 @@ public class Memory {
 
     private String currentlyWaiting = "";
     private int currWait = 0;
-// Just a reminder, Numlines for the demo need to be 16 and numline*linelength < 2^32(address) for RAM
+
     public Memory(int numLines, int lineLength) {
         this.size = numLines * lineLength;
         data = new int[numLines][lineLength];
 
-        /*Memory needs to be set to 0 in each block and the chache needs to be clean*/
-        //REMOVE LATER JUST FOR DEMO TO HAVE RANDOM DATA IN DATA
-        Random rand = new Random();
+        ArrayList<LineData> lineList = new ArrayList<>();
+
         for (int i = 0; i < data.length; i++) {
             for (int j = 0; j < data[i].length; j++) {
-                //data[i][j] = rand.nextInt(10);
                 data[i][j] = 0;
             }
+
+            lineList.add(new LineData(i * 4));
         }
+
+        lineData = FXCollections.observableList(lineList);
     }
 
     public Memory(int numLines, int lineLength, int delay) {
@@ -86,6 +96,7 @@ public class Memory {
         int lineNum = (address - offset)  / lineLength;
 
         data[lineNum][offset] = value;
+        lineData.get(lineNum).write(offset, value);
 
         return 1;
     }
@@ -95,6 +106,7 @@ public class Memory {
             return Memory.WAIT;
 
         data[lineNum] = line;
+        lineData.get(lineNum).writeLine(line);
 
         return 1;
     }
@@ -110,6 +122,7 @@ public class Memory {
 
     public void writeSingleValueInCache(int tag,int offset,int value) {
         data[tag][offset] = value;
+        lineData.get(tag).write(offset, value);
     }
 
     //Method of direct access during write back since the cache line data is known
@@ -146,5 +159,77 @@ public class Memory {
 
     public int getSize(){
         return size;
+    }
+
+    // Holds cache line data to display in table
+    public class LineData {
+        public SimpleIntegerProperty lineAddr, word1, word2, word3, word4;
+
+        public LineData(int lineAddr) {
+            this.lineAddr = new SimpleIntegerProperty(lineAddr);
+            this.word1 = new SimpleIntegerProperty(0);
+            this.word2 = new SimpleIntegerProperty(0);
+            this.word3 = new SimpleIntegerProperty(0);
+            this.word4 = new SimpleIntegerProperty(0);
+        }
+
+        public void writeLine(int[] line) {
+            for (int i = 0; i < line.length; i++) {
+                write(i, line[i]);
+            }
+        }
+
+        public void write(int offset, int value) {
+            switch (offset) {
+                case 0:
+                    word1 = new SimpleIntegerProperty(value);
+                    break;
+                case 1:
+                    word2 = new SimpleIntegerProperty(value);
+                    break;
+                case 2:
+                    word3 = new SimpleIntegerProperty(value);
+                    break;
+                case 3:
+                    word4 = new SimpleIntegerProperty(value);
+                    break;
+            }
+        }
+
+        public int getLineAddr() {
+            return lineAddr.get();
+        }
+
+        public int getWord1() {
+            return word1.get();
+        }
+
+        public int getWord2() {
+            return word2.get();
+        }
+
+        public int getWord3() {
+            return word3.get();
+        }
+
+        public int getWord4() {
+            return word4.get();
+        }
+
+        public SimpleIntegerProperty word1Property() {
+            return word1;
+        }
+
+        public SimpleIntegerProperty word2Property() {
+            return word2;
+        }
+
+        public SimpleIntegerProperty word3Property() {
+            return word3;
+        }
+
+        public SimpleIntegerProperty word4Property() {
+            return word4;
+        }
     }
 }
