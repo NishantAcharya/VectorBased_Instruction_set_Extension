@@ -220,10 +220,8 @@ public class Main extends Application {
         hb2.setPrefHeight(375);
         hb2.getChildren().addAll(programVB, consoleVB);
 
-        HBox.setHgrow(programVB, Priority.ALWAYS);
         HBox.setHgrow(consoleVB, Priority.ALWAYS);
-        programVB.setPrefWidth(hb2.getPrefWidth()/2);
-        consoleVB.setPrefWidth(hb2.getPrefWidth()/2);
+        programVB.setPrefWidth(250);
 
         VBox.setVgrow(programScroll, Priority.ALWAYS);
         VBox.setVgrow(consoleScroll, Priority.ALWAYS);
