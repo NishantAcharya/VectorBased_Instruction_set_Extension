@@ -665,7 +665,7 @@ public class Pipeline implements NotifyAvailable {
                     }
                     for (Instruction.VectorValuePair vp: instruction.getVPtoWriteBack(true)) {
                         ArrayList<Integer> val = new ArrayList<>();
-                        for (int k = 0; k < vp.value.length; k++) {
+                        for (int k = 0; k < vp.vlen; k++) {
                             val.add(vp.value[k]);
                         }
                         vectorRegisters.set(vp.address, val);

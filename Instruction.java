@@ -442,10 +442,12 @@ public class Instruction {
     public class VectorValuePair{
         int address;
         int[] value;
+        int vlen;
 
         public VectorValuePair(int address, int[] value) {
             this.address = address;
             this.value = value;
+            this.vlen = vectorLength;
         }
     }
 }
