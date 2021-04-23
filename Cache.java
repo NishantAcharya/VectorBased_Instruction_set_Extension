@@ -108,7 +108,7 @@ public class Cache extends Memory {
 
         // Look for empty spot and find least recently used full spot
         for (int i = set*4; i < (set*4)+lru[set].length; i++)
-            if (tags[i] == 0 && valid[i] == false) {
+            if (tags[i] == -1 && valid[i] == false) {
                 nextLoc = i;
                 break;
             } else if (lru[set][i%4] > lru[set][maxLRULoc%4])
