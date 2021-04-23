@@ -11,14 +11,12 @@ public class Pipeline implements NotifyAvailable {
 
     private final Stage[] stages;
 
-    private boolean firstStageAvailable = true;
     private boolean runningProgram = false;
     private boolean usePipeline = true;
 
-    private Cache cache;//Access to the cache and memory operations
     private Registers registers;
     private VectorRegisters vectorRegisters;
-    private Memory RAM;
+    private Memory memory;
 
     private Runnable completed;
 
@@ -26,11 +24,9 @@ public class Pipeline implements NotifyAvailable {
 
     private int endID = Integer.MAX_VALUE;
 
-    public Pipeline(Registers registers, VectorRegisters vectorRegisters, Cache cache, Memory RAM) {
-        this.cache = cache;
+    public Pipeline(Registers registers, VectorRegisters vectorRegisters) {
         this.registers = registers;
         this.vectorRegisters = vectorRegisters;
-        this.RAM = RAM;
 
         // Replace this with actual stage classes once built
         Stage stage5 = new Stage("Write Back", null);
@@ -44,8 +40,9 @@ public class Pipeline implements NotifyAvailable {
 
     int instrID = 0;
 
-    public void run(int programAddress, boolean usePipeline, Runnable completed) {
+    public void run(int programAddress, boolean usePipeline, Memory memory, Runnable completed) {
         this.usePipeline = usePipeline;
+        this.memory = memory;
 
         stages[0].setToNotify(usePipeline ? this : null);
         stages[1].setToNotify(usePipeline ? stages[0] : null);
@@ -80,7 +77,6 @@ public class Pipeline implements NotifyAvailable {
         Instruction instr = new Instruction(currID);
         currInstructions.add(instr);
 
-        firstStageAvailable = false;
         stages[0].run(instr);
     }
 
@@ -129,7 +125,7 @@ public class Pipeline implements NotifyAvailable {
 
                     // Gets instruction in memory from address in PC
                     while (out == Memory.WAIT) {
-                        out = RAM.read(name, PC);
+                        out = memory.read(name, PC);
                     }
 
                     if (instruction.checkIfHalt(out)) // Check if halt instruction
@@ -511,7 +507,7 @@ public class Pipeline implements NotifyAvailable {
                             }
                             break;
                         default:
-                            System.out.println("Invalid Type code" + type);
+                            System.out.println("Invalid Type code: " + type);
                             break;
                     }
 
@@ -523,48 +519,57 @@ public class Pipeline implements NotifyAvailable {
 
                     //For Indirect access
                     for (Instruction.AddressPair ap: instruction.getAPtoMemAccess()) {
-                        if(ap.typ == 1){
+                        if (ap.typ == 1){
+                            int op1 = Memory.WAIT, op2 = Memory.WAIT;
+                            while (op1 == Memory.WAIT)
+                                op1 = memory.read(name, ap.address_1);
+                            while (op2 == Memory.WAIT)
+                                op2 = memory.read(name, ap.address_2);
                             switch(ap.opcode){
                                 case 0://Add
-                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) + cache.read("Memory Access",ap.address_2) , true);
+                                    instruction.saveToWriteBack(ap.destination, op1 + op2, true);
                                     break;
                                 case 1://Subtract
-                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) - cache.read("Memory Access",ap.address_2) , true);
+                                    instruction.saveToWriteBack(ap.destination, op1 - op2 , true);
                                     break;
                                 case 2://Multiply
-                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) * cache.read("Memory Access",ap.address_2) , true);
+                                    instruction.saveToWriteBack(ap.destination, op1 * op2, true);
                                     break;
                                 case 4://Divide
-                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) / cache.read("Memory Access",ap.address_2) , true);
+                                    instruction.saveToWriteBack(ap.destination, op1 / op2 , true);
                                     break;
                                 case 8://Mod
-                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) % cache.read("Memory Access",ap.address_2) , true);
+                                    instruction.saveToWriteBack(ap.destination, op1 % op2 , true);
                                     break;
                                 case 12://Compare
-                                    int cmp = compare(cache.read("Memory Access",ap.address_1), cache.read("Memory Access",ap.address_2));
+                                    int cmp = compare(op1, op2);
                                     instruction.saveToWriteBack(13, cmp, true);
                                     break;
                             }
                         }
                         else if(ap.typ == 2){
+                            int op1 = Memory.WAIT;
+                            while (op1 == Memory.WAIT)
+                                op1 = memory.read(name, ap.address_1);
+
                             switch(ap.opcode){
                                 case 0://Add
-                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) + ap.address_2, true);
+                                    instruction.saveToWriteBack(ap.destination, op1 + ap.address_2, true);
                                     break;
                                 case 1://Subtract
-                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) - ap.address_2, true);
+                                    instruction.saveToWriteBack(ap.destination, op1 - ap.address_2, true);
                                     break;
                                 case 2://Multiply
-                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) * ap.address_2, true);
+                                    instruction.saveToWriteBack(ap.destination, op1 * ap.address_2, true);
                                     break;
                                 case 4://Divide
-                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) / ap.address_2, true);
+                                    instruction.saveToWriteBack(ap.destination, op1 / ap.address_2, true);
                                     break;
                                 case 8://Mod
-                                    instruction.saveToWriteBack(ap.destination, cache.read("Memory Access",ap.address_1) % ap.address_2, true);
+                                    instruction.saveToWriteBack(ap.destination, op1 % ap.address_2, true);
                                     break;
                                 case 12://Compare
-                                    int cmp = compare(cache.read("Memory Access",ap.address_1), ap.address_2);
+                                    int cmp = compare(op1, ap.address_2);
                                     instruction.saveToWriteBack(13, cmp, true);
                                     break;
                             }
@@ -576,8 +581,9 @@ public class Pipeline implements NotifyAvailable {
                         if(avp.typ == 5 && avp.opcode == 13){
                             int check = Memory.WAIT;
                             while(check == Memory.WAIT){
-                                check = cache.read("Memory Access", avp.value);
+                                check = memory.read(name, avp.value);
                             }
+
                             instruction.saveToWriteBack(avp.address,check , true);
                         }
                         else if(avp.typ == 8){
@@ -592,7 +598,10 @@ public class Pipeline implements NotifyAvailable {
 
                                 //Reading full lines
                                 for(int readNum=0; readNum < fullreads;readNum++){
-                                    int[] line = cache.cacheLineRead(start,4);
+                                    int[] line = new int[] { Memory.WAIT };
+                                    while(line[0] == Memory.WAIT) {
+                                        line = memory.getLine(name, start);
+                                    }
                                     //Copying the values in vd
                                     for(int k = 0; k < 4;k++){
                                         vd[j] = line[k];
@@ -600,8 +609,13 @@ public class Pipeline implements NotifyAvailable {
                                     }
                                     start += 4;
                                 }
+
                                 //Reading partial lines
-                                int[] line = cache.cacheLineRead(start,partialread);
+                                int[] line = new int[] { Memory.WAIT };
+                                while(line[0] == Memory.WAIT) {
+                                    line = memory.getLine(name, start);
+                                }
+
                                 for(int k = 0; k < partialread;k++){
                                     vd[j] = line[k];
                                     j++;
@@ -618,9 +632,11 @@ public class Pipeline implements NotifyAvailable {
 
                                 //Need to add a store
                             }
-                        }
-                        else{
-                            cache.processorWrite(avp.address, avp.value,"Memory Access");
+                        } else{
+                            int check = Memory.WAIT;
+                            while(check == Memory.WAIT) {
+                                check = memory.write(name, avp.address, avp.value);
+                            }
                         }
                     }
 
@@ -648,7 +664,6 @@ public class Pipeline implements NotifyAvailable {
 
                         if (type == 8 && opCode == 7) { // Append immediate for vectors(sort of)
                             vectorRegisters.append(avp.address, avp.value);
-
                             continue;
                         }
 

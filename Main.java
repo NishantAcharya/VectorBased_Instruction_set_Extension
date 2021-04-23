@@ -84,8 +84,6 @@ public class Main extends Application {
 
         stage.setScene(scene);
         stage.show();
-//        runInstructions();
-
     }
 
     public void setup() {
@@ -93,7 +91,7 @@ public class Main extends Application {
         cache = new Cache(16, RAM);
         registers = new Registers(16);
         vectorRegisters = new VectorRegisters(16,16);
-        pipeline = new Pipeline(registers,vectorRegisters, cache, RAM);
+        pipeline = new Pipeline(registers, vectorRegisters);
 
         if (cacheTable != null) {
             cacheTable.setItems(cache.lineData);
@@ -115,7 +113,7 @@ public class Main extends Application {
         RAM.printData(24000, 24008);
         System.out.println();
 
-        pipeline.run(24000, true, () -> {
+        pipeline.run(24000, true, cache, () -> {
             System.out.println("\n-~-~- Program Completed -~-~-");
 //            RAM.printData(0, 3);
 
@@ -183,8 +181,9 @@ public class Main extends Application {
                 programTxt.setText(loaded);
 
                 final long startTime = System.currentTimeMillis();
+                Memory memory = useCacheCB.isSelected() ? cache : RAM;
 
-                pipeline.run(24000, usePipeCB.isSelected(), () -> {
+                pipeline.run(24000, usePipeCB.isSelected(), memory, () -> {
                     System.out.println("Finished running " + fileName);
                     memoryTable.refresh();
 

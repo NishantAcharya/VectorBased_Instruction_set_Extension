@@ -317,7 +317,7 @@ public class Instruction {
                     dependsOnRegisters.add(r_d + 100);
                 }
 
-                this.strValue = opMapV.get(opCode) + " V" + r_d + (opCode == 7 ? " " : " V") + r_1;
+                this.strValue = opMapV.get(opCode) + " V" + r_d + (opCode == 7 ? " " : (opCode == 13 ? " R" : " V")) + r_1;
                 break;
             case 9: // Vector Data Processing with 3 operands (Vd = V1 + V2)
                 r_d = (instr & 0b00000000000001111000000000000000) >> 15;

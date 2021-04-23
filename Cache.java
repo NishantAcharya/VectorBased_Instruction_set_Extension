@@ -50,7 +50,7 @@ public class Cache extends Memory {
         int tagLoc = -1;
 
         //Finding the set of the address
-        int set = (address / 16)%4; //Setting set to cycle of 16 words
+        int set = (address/16) % 4; //Setting set to cycle of 16 words
 
         // Check if tag is in cache
         for (int i = set * 4; i < (set * 4) + lru[set].length; i++) {
@@ -84,7 +84,7 @@ public class Cache extends Memory {
                 }
             }
 
-            return super.read(callingFrom, tagLoc + offset);
+            return super.read(callingFrom, tagLoc * 4 + offset);
         } else { // Cache miss
             // Read from next memory, wait if needed
             int[] line = nextMemory.getLine(callingFrom, address);
@@ -209,7 +209,8 @@ public class Cache extends Memory {
         }
     }
 
-    public void processorWrite(int address, int val, String callingFrom) {
+    @Override
+    public int write(String callingFrom, int address, int val) {
         int tagLoc = -1;
         int tag = address - address % 4;
 
@@ -240,20 +241,18 @@ public class Cache extends Memory {
             this.writeSingleValueInCache(tagLoc, address % 4, val);
             dirty[tagLoc] = true;
             //for demo
-            int[] line = readLineDemo(tagLoc);
+            int[] line = getCacheLine(tagLoc);
             lineData.set(tagLoc, new LineData(0, tag, line[0], line[1], line[2], line[3]));
             lineData.get(tagLoc).v.set(1);
-        }
-        //Write to memory with dirty bit set to true
-        else {
-            int out = Memory.WAIT;
 
-            while (out == Memory.WAIT)
-                out = nextMemory.write("Cache", address, val);
+            return 1;
+        } else {
+            return nextMemory.write("Cache", address, val);
         }
     }
 
-    public int[] cacheLineRead(int address, int eleNum){
+    @Override
+    public int[] getLine(String callingFrom, int address){
         int offset = address % 4;
         int tag = address - offset; //getting start of the line
         int tagLoc = -1;
@@ -268,6 +267,7 @@ public class Cache extends Memory {
             }
         }
 
+        // If tag is in cache
         if(tagLoc >= 0){
             if (lru[set][tagLoc%4] != 0) {
                 for (int i = 0; i < lru[set].length; i++) { // Update LRU (0 for nextLoc, +1 for everything else)
@@ -278,20 +278,16 @@ public class Cache extends Memory {
                 }
             }
             //Only returning the requested amount of words
-            int[] cacheLine =  super.readLineDemo(tagLoc);
-            int[] returnLine = new int[eleNum];
-            for(int i = 0; i < eleNum;i++){
+            int[] cacheLine =  this.getCacheLine(tagLoc);
+            int[] returnLine = new int[4];
+            for(int i = 0; i < 4; i++){
                 returnLine[i] = cacheLine[i];
             }
             return returnLine;
         }
+
         //If not in cache and only returning requested amount of words
-        int[] line =  nextMemory.getLine("Cache",address);
-        int[] returnLine = new int[eleNum];
-        for(int i = 0; i < eleNum;i++){
-            returnLine[i] = line[i];
-        }
-        return returnLine;
+        return nextMemory.getLine(callingFrom, address);
     }
 
     // Holds cache line data to display in table
