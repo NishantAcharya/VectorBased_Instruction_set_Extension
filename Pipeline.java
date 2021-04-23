@@ -269,28 +269,28 @@ public class Pipeline implements NotifyAvailable {
                                     r_1 = params.get(1);
                                     imm = params.get(2);
 
-                                    instruction.saveToWriteBack(r_d, registers.get(r_1) - registers.get(imm), true);
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) - imm, true);
                                     break;
                                 case 2: // Multiply
                                     r_d = params.get(0);
                                     r_1 = params.get(1);
                                     imm = params.get(2);
 
-                                    instruction.saveToWriteBack(r_d, registers.get(r_1) * registers.get(imm), true);
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) * imm, true);
                                     break;
                                 case 4: // Divide(Not the processor's job to catch the dividing by zero error)
                                     r_d = params.get(0);
                                     r_1 = params.get(1);
                                     imm = params.get(2);
 
-                                    instruction.saveToWriteBack(r_d, registers.get(r_1) / registers.get(imm), true);
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) / imm, true);
                                     break;
                                 case 8: // Modulo(Not the processor's job to catch the dividing by zero error)
                                     r_d = params.get(0);
                                     r_1 = params.get(1);
                                     imm = params.get(2);
 
-                                    instruction.saveToWriteBack(r_d, registers.get(r_1) % registers.get(imm), true);
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) % imm, true);
                                     break;
                                 case 12: // Compare
                                     r_1 = registers.get(params.get(1));

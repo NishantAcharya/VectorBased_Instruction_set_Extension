@@ -183,7 +183,7 @@ public class Memory {
 
     private void delay() {
         try {
-            Thread.sleep(3);
+            Thread.sleep(1);
         } catch (Exception e) {}
     }
 
