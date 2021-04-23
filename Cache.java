@@ -146,7 +146,7 @@ public class Cache extends Memory {
             if(lru[set][i] != -1) {
                 lru[set][i] = (nextLoc % 4 == i) ? 0 : ((tags[i + (set * 4)] == 0 && !valid[i + (set * 4)]) ? -1 : lru[set][i] + 1);
             }
-            if( i == nextLoc){
+            if( i == nextLoc%4){
                 lru[set][i] = 0;
             }
             lineData.get(i+(set*4)).setLru(lru[set][i]);
