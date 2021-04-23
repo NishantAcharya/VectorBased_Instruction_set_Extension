@@ -507,7 +507,7 @@ public class Pipeline implements NotifyAvailable {
                             }
                             break;
                         default:
-                            System.out.println("Invalid Type code" + type);
+                            System.out.println("Invalid Type code: " + type);
                             break;
                     }
 
@@ -519,7 +519,7 @@ public class Pipeline implements NotifyAvailable {
 
                     //For Indirect access
                     for (Instruction.AddressPair ap: instruction.getAPtoMemAccess()) {
-                        if(ap.typ == 1){
+                        if (ap.typ == 1){
                             int op1 = Memory.WAIT, op2 = Memory.WAIT;
                             while (op1 == Memory.WAIT)
                                 op1 = memory.read(name, ap.address_1);
@@ -635,7 +635,7 @@ public class Pipeline implements NotifyAvailable {
                         } else{
                             int check = Memory.WAIT;
                             while(check == Memory.WAIT) {
-                                memory.write(name, avp.address, avp.value);
+                                check = memory.write(name, avp.address, avp.value);
                             }
                         }
                     }
@@ -664,7 +664,6 @@ public class Pipeline implements NotifyAvailable {
 
                         if (type == 8 && opCode == 7) { // Append immediate for vectors(sort of)
                             vectorRegisters.append(avp.address, avp.value);
-
                             continue;
                         }
 

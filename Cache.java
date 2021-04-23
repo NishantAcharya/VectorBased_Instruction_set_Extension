@@ -50,7 +50,7 @@ public class Cache extends Memory {
         int tagLoc = -1;
 
         //Finding the set of the address
-        int set = (address / 16)%4; //Setting set to cycle of 16 words
+        int set = (address/16) % 4; //Setting set to cycle of 16 words
 
         // Check if tag is in cache
         for (int i = set * 4; i < (set * 4) + lru[set].length; i++) {
@@ -84,7 +84,7 @@ public class Cache extends Memory {
                 }
             }
 
-            return super.read(callingFrom, tagLoc + offset);
+            return super.read(callingFrom, tagLoc * 4 + offset);
         } else { // Cache miss
             // Read from next memory, wait if needed
             int[] line = nextMemory.getLine(callingFrom, address);
@@ -209,6 +209,7 @@ public class Cache extends Memory {
         }
     }
 
+    @Override
     public int write(String callingFrom, int address, int val) {
         int tagLoc = -1;
         int tag = address - address % 4;
