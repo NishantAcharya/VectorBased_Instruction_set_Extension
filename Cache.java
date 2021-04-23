@@ -39,8 +39,8 @@ public class Cache extends Memory {
 
             lineArrayList.add(new LineData(-1, -1, -1, -1, -1, -1));
         }
-
         lineData = FXCollections.observableList(lineArrayList);
+
     }
 
     @Override
@@ -145,6 +145,9 @@ public class Cache extends Memory {
         for (int i = 0; i < lru[set].length; i++) { // Update LRU (0 for nextLoc, +1 for everything else)
             if(lru[set][i] != -1) {
                 lru[set][i] = (nextLoc % 4 == i) ? 0 : ((tags[i + (set * 4)] == 0 && !valid[i + (set * 4)]) ? -1 : lru[set][i] + 1);
+            }
+            if( i == nextLoc){
+                lru[set][i] = 0;
             }
             lineData.get(i+(set*4)).setLru(lru[set][i]);
         }

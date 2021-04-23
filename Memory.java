@@ -42,6 +42,18 @@ public class Memory {
         this.delay = delay;
         this.size = numLines * lineLength;
         data = new int[numLines][lineLength];
+        ArrayList<LineData> lineList = new ArrayList<>();
+
+        for (int i = 0; i < data.length; i++) {
+            for (int j = 0; j < data[i].length; j++) {
+                data[i][j] = 0;
+            }
+
+            lineList.add(new LineData(i * 4));
+        }
+
+        lineData = FXCollections.observableList(lineList);
+
     }
 
     private boolean needsToWait(String callingFrom, int address) {

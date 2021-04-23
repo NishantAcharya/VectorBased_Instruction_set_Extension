@@ -352,7 +352,7 @@ public class Pipeline implements NotifyAvailable {
                         case 8:// Vector Load/Store
                             switch (opCode) {
                                 case 13:
-                                    //Only direct load happen in execute stage, all memory based loads happen in memory stage
+                                    //Copy value from origin register to destination register
                                     ArrayList<Integer> param = vectorRegisters.get(params.get(1));
                                     int[] v1 = new int[param.size()];
                                     for(int k = 0; k < param.size() && param.get(k) != null;k++){
@@ -360,6 +360,7 @@ public class Pipeline implements NotifyAvailable {
                                     }
                                     instruction.vectorSaveToWriteBack(params.get(0), v1, true);
                                     break;
+                                    //Add a indrect load from memory
                                 case 14:
                                     //Store gets executed in the write back or memory access stage
                                     int address = registers.get(params.get(0));
@@ -573,7 +574,11 @@ public class Pipeline implements NotifyAvailable {
                     for (Instruction.AddressValuePair avp: instruction.getAVPsToWriteBack(false)) {
                         //Loading from memory at a given register
                         if(avp.typ == 5 && avp.opcode == 13){
-                            instruction.saveToWriteBack(avp.address, cache.read("Memory Access", avp.value), true);
+                            int check = Memory.WAIT;
+                            while(check == Memory.WAIT){
+                                check = cache.read("Memory Access", avp.value);
+                            }
+                            instruction.saveToWriteBack(avp.address,check , true);
                         }
                         else if(avp.typ == 8){
                             if(avp.opcode == 0){//Vector Load from memory(note, the passed result in vd is an int[],change it to Arraylist)
