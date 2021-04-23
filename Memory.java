@@ -78,8 +78,10 @@ public class Memory {
     }
 
     public int read(String callingFrom, int address) {
-        if (needsToWait(callingFrom, address))
+        if (needsToWait(callingFrom, address)) {
+            delay();
             return Memory.WAIT;
+        }
 
         address = address % size; // Wrap around if needed
         int offset = address % lineLength;
@@ -89,8 +91,10 @@ public class Memory {
     }
 
     public int[] getLine(String callingFrom, int address) {
-        if (needsToWait(callingFrom, address))
-            return new int[] { Memory.WAIT };
+        if (needsToWait(callingFrom, address)) {
+            delay();
+            return new int[]{Memory.WAIT};
+        }
 
         address = address % size; // Wrap around if needed
         int offset = address % lineLength;
@@ -100,8 +104,10 @@ public class Memory {
     }
 
     public int write(String callingFrom, int address, int value) {
-        if (needsToWait(callingFrom, address))
+        if (needsToWait(callingFrom, address)) {
+            delay();
             return Memory.WAIT;
+        }
 
         address = address % size; // Wrap around if needed
         int offset = address % 4;
@@ -114,8 +120,10 @@ public class Memory {
     }
 
     public int writeLine(String callingFrom, int lineNum, int[] line) {
-        if (needsToWait(callingFrom, lineNum))
+        if (needsToWait(callingFrom, lineNum)) {
+            delay();
             return Memory.WAIT;
+        }
 
         data[lineNum] = line;
         lineData.get(lineNum).writeLine(line);
@@ -171,6 +179,12 @@ public class Memory {
 
     public int getSize(){
         return size;
+    }
+
+    private void delay() {
+        try {
+            Thread.sleep(3);
+        } catch (Exception e) {}
     }
 
     // Holds cache line data to display in table
