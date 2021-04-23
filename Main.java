@@ -164,6 +164,7 @@ public class Main extends Application {
         useCacheCB.setSelected(true);
         Label resetLabel = new Label("Reset");
         CheckBox resetCB = new CheckBox();
+        resetCB.setSelected(true);
 
         Label programTimeLabel = new Label("");
 

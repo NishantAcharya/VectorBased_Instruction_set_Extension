@@ -1,11 +1,4 @@
-import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-
-import javax.swing.text.TableView;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class Pipeline implements NotifyAvailable {
 
@@ -546,8 +539,7 @@ public class Pipeline implements NotifyAvailable {
                                     instruction.saveToWriteBack(13, cmp, true);
                                     break;
                             }
-                        }
-                        else if(ap.typ == 2){
+                        } else if(ap.typ == 2){
                             int op1 = Memory.WAIT;
                             while (op1 == Memory.WAIT)
                                 op1 = memory.read(name, ap.address_1);
@@ -584,7 +576,7 @@ public class Pipeline implements NotifyAvailable {
                                 check = memory.read(name, avp.value);
                             }
 
-                            instruction.saveToWriteBack(avp.address,check , true);
+                            instruction.saveToWriteBack(avp.address, check,true);
                         }
                         else if(avp.typ == 8){
                             if(avp.opcode == 0){//Vector Load from memory(note, the passed result in vd is an int[],change it to Arraylist)
