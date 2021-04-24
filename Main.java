@@ -164,6 +164,7 @@ public class Main extends Application {
         useCacheCB.setSelected(true);
         Label resetLabel = new Label("Reset");
         CheckBox resetCB = new CheckBox();
+        resetCB.setSelected(true);
 
         Label programTimeLabel = new Label("");
 
@@ -185,9 +186,11 @@ public class Main extends Application {
 
                 pipeline.run(24000, usePipeCB.isSelected(), memory, () -> {
                     System.out.println("Finished running " + fileName);
-                    memoryTable.refresh();
 
                     Platform.runLater(() -> {
+                        Main.print("~=~=~=~=~=~=~=~=~=~=~");
+                        Main.print("Finished running " + fileName);
+                        memoryTable.refresh();
                         programTimeLabel.setText(fileName + " ran in " + (System.currentTimeMillis() - startTime) / 1000.0 + "s");
                     });
                 });

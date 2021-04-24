@@ -9,6 +9,9 @@ public class Assembler {
     public static int toBinary(String line) {
         setupHashMaps();
 
+        if (line.equals("END") || line.equals("HALT"))
+            return Instruction.HALT;
+
         String[] tokens = line.toUpperCase().split(" ");
 
         boolean isVectorInst = isVectorInstruction(tokens);
@@ -27,6 +30,8 @@ public class Assembler {
                 // Insert condition code
                 int cond = condMap.get(tokens[3]);
                 binary = binary | (cond << 28);
+            } else {
+                binary = binary | (Instruction.NO_COND << 28);
             }
 
             // Insert sign bit
@@ -146,6 +151,7 @@ public class Assembler {
         opMap.put("NOT", 9);
         opMap.put("XOR", 10);
         opMap.put("COMPARE", 12);
+        opMap.put("CMP", 12);
         opMap.put("SET FLAG", 6);
         opMap.put("SHIFT", 7);
         opMap.put("SWAP", 11);

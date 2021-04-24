@@ -3,6 +3,7 @@ import java.util.HashMap;
 
 public class Instruction {
 
+    public static int NO_COND = 0b0110;
     public static final int HALT = 0b00001111000000000000000000000000;
 
     private HashMap<Integer, String> opMap;
@@ -298,7 +299,7 @@ public class Instruction {
                 r_1 *= (sign == 1 ? -1 : 1);
                 params.add(r_1);
 
-                strValue = "BRANCH " + r_1 + " IF " + condMap.get(condCode);
+                strValue = "BRANCH " + r_1 + (condCode == NO_COND ? "" : " IF " + condMap.get(condCode));
                 break;
             case 8: // Vector Load/Store Load vector from address into rd / store vector in rd into address)
                 r_d = (instr & 0b00000000000001111000000000000000) >> 15;
@@ -409,6 +410,7 @@ public class Instruction {
     }
 
     public boolean checkCond(int cmp) {
+        if (condCode == NO_COND) return true;
         return ((cmp >> condCode) & 1) == 1;
     }
 

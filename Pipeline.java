@@ -1,11 +1,4 @@
-import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-
-import javax.swing.text.TableView;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class Pipeline implements NotifyAvailable {
 
@@ -276,28 +269,28 @@ public class Pipeline implements NotifyAvailable {
                                     r_1 = params.get(1);
                                     imm = params.get(2);
 
-                                    instruction.saveToWriteBack(r_d, registers.get(r_1) - registers.get(imm), true);
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) - imm, true);
                                     break;
                                 case 2: // Multiply
                                     r_d = params.get(0);
                                     r_1 = params.get(1);
                                     imm = params.get(2);
 
-                                    instruction.saveToWriteBack(r_d, registers.get(r_1) * registers.get(imm), true);
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) * imm, true);
                                     break;
                                 case 4: // Divide(Not the processor's job to catch the dividing by zero error)
                                     r_d = params.get(0);
                                     r_1 = params.get(1);
                                     imm = params.get(2);
 
-                                    instruction.saveToWriteBack(r_d, registers.get(r_1) / registers.get(imm), true);
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) / imm, true);
                                     break;
                                 case 8: // Modulo(Not the processor's job to catch the dividing by zero error)
                                     r_d = params.get(0);
                                     r_1 = params.get(1);
                                     imm = params.get(2);
 
-                                    instruction.saveToWriteBack(r_d, registers.get(r_1) % registers.get(imm), true);
+                                    instruction.saveToWriteBack(r_d, registers.get(r_1) % imm, true);
                                     break;
                                 case 12: // Compare
                                     r_1 = registers.get(params.get(1));
@@ -546,8 +539,7 @@ public class Pipeline implements NotifyAvailable {
                                     instruction.saveToWriteBack(13, cmp, true);
                                     break;
                             }
-                        }
-                        else if(ap.typ == 2){
+                        } else if(ap.typ == 2){
                             int op1 = Memory.WAIT;
                             while (op1 == Memory.WAIT)
                                 op1 = memory.read(name, ap.address_1);
@@ -584,7 +576,7 @@ public class Pipeline implements NotifyAvailable {
                                 check = memory.read(name, avp.value);
                             }
 
-                            instruction.saveToWriteBack(avp.address,check , true);
+                            instruction.saveToWriteBack(avp.address, check,true);
                         }
                         else if(avp.typ == 8){
                             if(avp.opcode == 0){//Vector Load from memory(note, the passed result in vd is an int[],change it to Arraylist)
