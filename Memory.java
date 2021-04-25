@@ -133,6 +133,7 @@ public class Memory {
             return Memory.WAIT;
         for(int i = 0; i < eleNum;i++){
             data[lineNum][i] = line[i];
+            lineData.get(lineNum).write(i, line[i]);
         }
         return 1;
     }
