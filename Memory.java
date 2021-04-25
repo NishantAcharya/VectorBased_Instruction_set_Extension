@@ -117,6 +117,7 @@ public class Memory {
     }
 
     public int writeLine(String callingFrom, int lineNum, int[] line) {
+        lineNum = lineNum/4;
         if (needsToWait(callingFrom, lineNum)) {
             delay();
             return Memory.WAIT;
