@@ -402,12 +402,12 @@ public class Pipeline implements NotifyAvailable {
                                     len = instruction.getVectorLength();//number of elements
                                     v1 = vectorRegisters.get(r_1);
                                     v2 = vectorRegisters.get(r_2);
-                                    vd = new int[len];
+                                    int sum = 0;
 
                                     for(int element = 0; element < len;element++){
-                                        vd[element] = v1.get(element)*v2.get(element);
+                                        sum += v1.get(element)*v2.get(element);
                                     }
-                                    instruction.vectorSaveToWriteBack(r_d, vd, true);
+                                    instruction.saveToWriteBack(r_d,sum , true);
                                     break;
                                 case 4: // Divide(Not the processor's job to catch the dividing by zero error)
                                     r_d = params.get(0);
@@ -652,15 +652,6 @@ public class Pipeline implements NotifyAvailable {
                                 while(check == Memory.WAIT){
                                     check = memory.writeLinePartial(name, start,line,partialstore);
                                 }
-                                //To debug
-                                int[] checks = new int[]{Memory.WAIT};
-                                while(checks[0] == Memory.WAIT) {
-                                    checks = memory.getLine("Main", 0);
-                                }
-                                for(int k = 0; k < checks.length;k++){
-                                    System.out.println(checks[k]);
-                                }
-                                //To debug
                             }
                         } else{
                             int check = Memory.WAIT;
@@ -692,7 +683,7 @@ public class Pipeline implements NotifyAvailable {
                         int opCode = instruction.getOpCode();
                         int type = instruction.getType();
 
-                        if (type == 8 && opCode == 7) { // Append immediate for vectors(sort of)
+                        if ((type == 8 && opCode == 7) || (type == 9 && opCode == 2)) { // Append immediate for vectors(sort of)
                             vectorRegisters.append(avp.address, avp.value);
                             continue;
                         }
