@@ -342,12 +342,7 @@ public class Pipeline implements NotifyAvailable {
                             switch (opCode) {
                                 case 13:
                                     //Copy value from origin register to destination register
-                                    ArrayList<Integer> param = vectorRegisters.get(params.get(1));
-                                    int[] v1 = new int[param.size()];
-                                    for(int k = 0; k < param.size() && param.get(k) != null;k++){
-                                        v1[k] = param.get(k);
-                                    }
-                                    instruction.vectorSaveToWriteBack(params.get(0), v1, true);
+                                    instruction.saveToWriteBack(params.get(0), params.get(1), false);
                                     break;
                                     //Add a indrect load from memory
                                 case 14:
@@ -579,7 +574,7 @@ public class Pipeline implements NotifyAvailable {
                             instruction.saveToWriteBack(avp.address, check,true);
                         }
                         else if(avp.typ == 8){
-                            if(avp.opcode == 0){//Vector Load from memory(note, the passed result in vd is an int[],change it to Arraylist)
+                            if(avp.opcode == 13){//Vector Load from memory(note, the passed result in vd is an int[],change it to Arraylist)
                                 int len = instruction.getVectorLength();
                                 int start = avp.value;
                                 int cacheLen = 4;
@@ -613,6 +608,7 @@ public class Pipeline implements NotifyAvailable {
                                     j++;
                                 }
                                 instruction.vectorSaveToWriteBack(avp.address, vd, true);
+
                             }
                             else{//Vector store in memory
                                 int len = instruction.getVectorLength();
