@@ -290,6 +290,49 @@ public class Cache extends Memory {
         return nextMemory.getLine(callingFrom, address);
     }
 
+    @Override
+    public int writeLinePartial(String callingFrom, int address, int[] line,int size) {
+        int offset = address % 4;
+        int tag = address - offset; //getting start of the line
+        int tagLoc = -1;
+
+        //Finding the set of the address
+        int set = (address / 16) % 4; //Setting set to cycle of 16 words
+
+        // Check if tag is in cache
+        for (int i = set * 4; i < (set * 4) + lru[set].length; i++) {
+            if (tags[i] == tag) {
+                tagLoc = i;
+                break;
+            }
+        }
+
+        //If tag is in the cache
+        if (tagLoc >= 0) {
+            //If the dirty bit is set to true writeback to memory
+            if (dirty[tagLoc]) {
+                int[] oldLine = super.getLine("", tagLoc * 4);
+                int out = Memory.WAIT;
+                System.out.println("Trying to writeback line to memory at address " + (tag));
+                while (out == Memory.WAIT) {
+                    out = nextMemory.writeLine(callingFrom, (tag / 4), oldLine);
+                    System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
+                }
+            }
+
+            this.writeLinePartial(callingFrom,address,line,size);
+            dirty[tagLoc] = true;
+            //for demo
+            int[] cLine = getCacheLine(tagLoc);
+            lineData.set(tagLoc, new LineData(0, tag, cLine[0], cLine[1], cLine[2], cLine[3]));
+            lineData.get(tagLoc).v.set(1);
+
+            return 1;
+        } else {
+            return nextMemory.writeLinePartial("Cache", address, line,size);
+        }
+    }
+
     // Holds cache line data to display in table
     public class LineData {
         public SimpleIntegerProperty lru, tag, v, word1, word2, word3, word4, dirty;

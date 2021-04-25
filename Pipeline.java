@@ -342,19 +342,10 @@ public class Pipeline implements NotifyAvailable {
                             switch (opCode) {
                                 case 13:
                                     //Copy value from origin register to destination register
-                                    ArrayList<Integer> param = vectorRegisters.get(params.get(1));
-                                    int[] v1 = new int[param.size()];
-                                    for(int k = 0; k < param.size() && param.get(k) != null;k++){
-                                        v1[k] = param.get(k);
-                                    }
-                                    instruction.vectorSaveToWriteBack(params.get(0), v1, true);
-                                    break;
-                                    //Add a indrect load from memory
+
                                 case 14:
                                     //Store gets executed in the write back or memory access stage
-                                    int address = registers.get(params.get(0));
-                                    int value = registers.get(params.get(1));
-                                    instruction.saveToWriteBack(address, value, false);
+                                    instruction.saveToWriteBack(params.get(0), registers.get(params.get(1)), false);
                                     break;
                                 case 7:
                                     //Append value onto vector
@@ -579,7 +570,7 @@ public class Pipeline implements NotifyAvailable {
                             instruction.saveToWriteBack(avp.address, check,true);
                         }
                         else if(avp.typ == 8){
-                            if(avp.opcode == 0){//Vector Load from memory(note, the passed result in vd is an int[],change it to Arraylist)
+                            if(avp.opcode == 13){//Vector Load from memory(note, the passed result in vd is an int[],change it to Arraylist)
                                 int len = instruction.getVectorLength();
                                 int start = avp.value;
                                 int cacheLen = 4;
@@ -613,6 +604,7 @@ public class Pipeline implements NotifyAvailable {
                                     j++;
                                 }
                                 instruction.vectorSaveToWriteBack(avp.address, vd, true);
+
                             }
                             else{//Vector store in memory
                                 int len = instruction.getVectorLength();
@@ -620,9 +612,50 @@ public class Pipeline implements NotifyAvailable {
                                 int cacheLen = 4;
                                 int fullstore = len/cacheLen;
                                 int partialstore = len%cacheLen;
-                                int address = avp.address;
+                                ArrayList<Integer> register = vectorRegisters.get(avp.address);
+                                int[] vd = new int[register.size()];
+                                int j = 0; //Value to keep a track of item in vd
 
-                                //Need to add a store
+                                //Making a deep copy of the register
+                                for(int k = 0;  k < vd.length && register.get(k) != null;k++){
+                                    vd[k] = register.get(k);
+                                }
+
+                                //Storing full lines
+                                for(int readNum=0; readNum < fullstore;readNum++){
+                                    int check = Memory.WAIT;
+                                    int[] line = new int[cacheLen];
+                                    for(int k = 0; k < 4;k++){
+                                        line[k] = vd[j];
+                                        j++;
+                                    }
+                                    while(check == Memory.WAIT) {
+                                        check = memory.writeLinePartial(name, start,line,4);
+                                    }
+
+                                    start += 4;
+                                }
+
+                                //Storing partial lines
+                                int[] line = new int[partialstore];
+                                int check = Memory.WAIT;
+
+                                for(int k = 0; k < partialstore;k++){
+                                   line[k] = vd[j];
+                                   j++;
+                                }
+                                while(check == Memory.WAIT){
+                                    check = memory.writeLinePartial(name, start,line,partialstore);
+                                }
+                                //To debug
+                                int[] checks = new int[]{Memory.WAIT};
+                                while(checks[0] == Memory.WAIT) {
+                                    checks = memory.getLine("Main", 0);
+                                }
+                                for(int k = 0; k < checks.length;k++){
+                                    System.out.println(checks[k]);
+                                }
+                                //To debug
                             }
                         } else{
                             int check = Memory.WAIT;
