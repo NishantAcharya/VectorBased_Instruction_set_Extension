@@ -4,14 +4,12 @@ import javafx.collections.ObservableList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Random;
 
 public class Memory {
-
     public ObservableList<LineData> lineData;
 
-    public static int WAIT = -93902354;
+    private final static int DELAY_MS = 1; // ms delay
+    public final static int WAIT = -93902354;
     private int lineLength = 4;
     private int size;
     private int[][] data; // Data is a 2d array of lines, each with LINE_LENGTH words
@@ -74,7 +72,6 @@ public class Memory {
         }
 
         return true;
-
     }
 
     public int read(String callingFrom, int address) {
@@ -140,7 +137,7 @@ public class Memory {
         return 1;
     }
 
-    public void writeSingleValueInCache(int tag,int offset,int value) {
+    public void writeSingleValueInCache(int tag, int offset, int value) {
         data[tag][offset] = value;
         lineData.get(tag).write(offset, value);
     }
@@ -183,7 +180,7 @@ public class Memory {
 
     private void delay() {
         try {
-            Thread.sleep(1);
+            Thread.sleep(DELAY_MS);
         } catch (Exception e) {}
     }
 
@@ -220,6 +217,8 @@ public class Memory {
                     word4 = new SimpleIntegerProperty(value);
                     break;
             }
+
+            Main.refreshMemoryTable();
         }
 
         public int getLineAddr() {

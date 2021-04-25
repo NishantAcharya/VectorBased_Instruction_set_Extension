@@ -64,7 +64,7 @@ public class Cache extends Memory {
             // Read word from cache in location of tag
 
             if (!valid[(tagLoc)]){
-                //If valid bit is set to invlaid and tag exsists then treat it as a miss
+                //If valid bit is set to invlaid and tag exists then treat it as a miss
                 System.out.println("Invalid Bit encountered");
                 int[] line = nextMemory.getLine(callingFrom, address);
 
@@ -108,7 +108,7 @@ public class Cache extends Memory {
 
         // Look for empty spot and find least recently used full spot
         for (int i = set*4; i < (set*4)+lru[set].length; i++)
-            if (tags[i] == -1 && valid[i] == false) {
+            if (tags[i] == -1 && !valid[i]) {
                 nextLoc = i;
                 break;
             } else if (lru[set][i%4] > lru[set][maxLRULoc%4])
@@ -118,21 +118,21 @@ public class Cache extends Memory {
         if (nextLoc == -1) // Cache is full, take LRU
             nextLoc = maxLRULoc;
 
-        // Set tag and write line to cache in chosen location
-        tags[nextLoc] = tag;
-        valid[nextLoc] = true; // Setting the new cacheline as valid
-
         // Checking the dirty bits and writing back to New Memory if the bit is true
         if (dirty[nextLoc]){
-            int[] oldLine = super.getLine(callingFrom, nextLoc);
+            int[] oldLine = super.getLine(callingFrom, nextLoc * 4);
             int out = Memory.WAIT;
 
-            System.out.println("Trying to writeback line to memory at address " + (tag));
+            System.out.println("Trying to writeback line to memory at address " + (tags[nextLoc]));
             while (out == Memory.WAIT) {
-                out = nextMemory.writeLine(callingFrom, address, oldLine);
+                out = nextMemory.writeLine(callingFrom, tags[nextLoc] / 4, oldLine);
                 System.out.println("Cache returned " + (out == Memory.WAIT ? "WAIT" : ("" + out)));
             }
         }
+
+        // Set tag and write line to cache in chosen location
+        tags[nextLoc] = tag;
+        valid[nextLoc] = true; // Setting the new cacheline as valid
 
         writeLine(callingFrom, nextLoc, line);
         lineData.set(nextLoc, new LineData(0, tag, line[0], line[1], line[2], line[3]));
@@ -240,7 +240,7 @@ public class Cache extends Memory {
 
             this.writeSingleValueInCache(tagLoc, address % 4, val);
             dirty[tagLoc] = true;
-            //for demo
+            //for ui
             int[] line = getCacheLine(tagLoc);
             lineData.set(tagLoc, new LineData(0, tag, line[0], line[1], line[2], line[3]));
             lineData.get(tagLoc).v.set(1);

@@ -105,7 +105,7 @@ public class Main extends Application {
     public void runInstructions() {
 
         try {
-            loadInstructions(24000, "vector.txt", false);
+            loadInstructions(24000, "vector.txt", true,false);
 //            loadInstructions(24000, "vector_demo.txt", true);
         } catch (IOException e) { return; }
 
@@ -123,7 +123,7 @@ public class Main extends Application {
         });
     }
 
-    public String loadInstructions(int programAddress, String fileName, boolean isBinary) throws IOException {
+    public String loadInstructions(int programAddress, String fileName, boolean useCache, boolean isBinary) throws IOException {
         int addr = programAddress;
         StringBuilder programText = new StringBuilder();
 
@@ -135,17 +135,19 @@ public class Main extends Application {
                 int out = Memory.WAIT;
 
                 while (out == Memory.WAIT) {
-                    out = RAM.write("Main", addr, instr);
+                    out = (useCache ? cache : RAM).write("Main", addr, instr);
                 }
 
                 addr += 1;
             }
         }
 
-        // Write END (-1) after program
-        int out = Memory.WAIT;
-        while (out == Memory.WAIT) {
-            out = RAM.write("Main", addr, Instruction.HALT);
+        // Write END (-1) after program if not there
+        if (!programText.toString().endsWith("END")) {
+            int out = Memory.WAIT;
+            while (out == Memory.WAIT) {
+                out = (useCache ? cache : RAM).write("Main", addr, Instruction.HALT);
+            }
         }
 
         return programText.toString();
@@ -164,7 +166,6 @@ public class Main extends Application {
         useCacheCB.setSelected(true);
         Label resetLabel = new Label("Reset");
         CheckBox resetCB = new CheckBox();
-        resetCB.setSelected(true);
 
         Label programTimeLabel = new Label("");
 
@@ -175,7 +176,7 @@ public class Main extends Application {
             try {
                 if (resetCB.isSelected())
                     setup(); // Reset environment
-                String loaded = loadInstructions(24000, "Programs/" + fileName, false);
+                String loaded = loadInstructions(24000, "Programs/" + fileName, useCacheCB.isSelected(), false);
                 System.out.println(fileName + " loaded into memory");
 
                 consoleOutput = "";
@@ -416,6 +417,15 @@ public class Main extends Application {
         instance.consoleOutput = output + (instance.consoleOutput.isEmpty() ? "" : "\n") + instance.consoleOutput;
         Platform.runLater(() -> {
             instance.consoleTxt.setText(instance.consoleOutput);
+        });
+    }
+
+    public static void refreshMemoryTable() {
+        if (instance == null) return;
+        if (instance.memoryTable == null) return;
+
+        Platform.runLater(() -> {
+            instance.memoryTable.refresh();
         });
     }
 }
