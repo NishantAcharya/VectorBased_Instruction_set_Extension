@@ -2,7 +2,7 @@ import java.util.ArrayList;
 
 public class Pipeline implements NotifyAvailable {
 
-    private final Stage[] stages;
+    private Stage[] stages;
 
     private boolean runningProgram = false;
     private boolean usePipeline = true;
@@ -20,8 +20,9 @@ public class Pipeline implements NotifyAvailable {
     public Pipeline(Registers registers, VectorRegisters vectorRegisters) {
         this.registers = registers;
         this.vectorRegisters = vectorRegisters;
+    }
 
-        // Replace this with actual stage classes once built
+    private void setupStages() {
         Stage stage5 = new Stage("Write Back", null);
         Stage stage4 = new Stage("Memory Access", stage5);
         Stage stage3 = new Stage("Execute", stage4);
@@ -36,6 +37,7 @@ public class Pipeline implements NotifyAvailable {
     public void run(int programAddress, boolean usePipeline, Memory memory, Runnable completed) {
         this.usePipeline = usePipeline;
         this.memory = memory;
+        setupStages();
 
         stages[0].setToNotify(usePipeline ? this : null);
         stages[1].setToNotify(usePipeline ? stages[0] : null);

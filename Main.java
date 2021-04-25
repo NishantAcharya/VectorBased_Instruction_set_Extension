@@ -148,6 +148,9 @@ public class Main extends Application {
             while (out == Memory.WAIT) {
                 out = (useCache ? cache : RAM).write("Main", addr, Instruction.HALT);
             }
+
+            programText.append((programText.length() == 0) ? "END" : "\n" + "END");
+
         }
 
         return programText.toString();
