@@ -492,6 +492,9 @@ public class Pipeline implements NotifyAvailable {
                                     break;
                             }
                             break;
+                        case 7:
+                            //Avoiding the below exception for branch
+                            break;
                         default:
                             System.out.println("Invalid Type code: " + type);
                             break;
