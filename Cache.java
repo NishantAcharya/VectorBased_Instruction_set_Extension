@@ -97,6 +97,11 @@ public class Cache extends Memory {
         }
     }
 
+    //for debugging
+    public int instrRead(int PC,String name){
+        return nextMemory.instrRead(PC,name);
+    }
+
     public void writeToCache(int tag, int[] line, int address, String callingFrom, boolean isDirty) {
         int nextLoc = -1;
 
@@ -285,9 +290,15 @@ public class Cache extends Memory {
             }
             return returnLine;
         }
+        else{
+            int[] line = nextMemory.getLine(callingFrom, address);
 
-        //If not in cache and only returning requested amount of words
-        return nextMemory.getLine(callingFrom, address);
+            if (line[0] == Memory.WAIT)
+                return new int[]{Memory.WAIT};
+            // address added for writeback in case of dirty bit found on 1
+            super.writeLine("Cache",address/4,line);
+            return line;
+        }
     }
 
     @Override
@@ -320,7 +331,7 @@ public class Cache extends Memory {
                 }
             }
 
-            this.writeLinePartial(callingFrom,address,line,size);
+            super.writeLinePartial(callingFrom,address/4,line,size);
             dirty[tagLoc] = true;
             //for demo
             int[] cLine = getCacheLine(tagLoc);
@@ -328,8 +339,12 @@ public class Cache extends Memory {
             lineData.get(tagLoc).v.set(1);
 
             return 1;
-        } else {
-            return nextMemory.writeLinePartial("Cache", address, line,size);
+        }else{
+            int check = nextMemory.writeLinePartial("Cache",address/4,line,size);
+            if (check == Memory.WAIT)
+                return Memory.WAIT;
+            // address added for writeback in case of dirty bit found on 1
+            return check;
         }
     }
 

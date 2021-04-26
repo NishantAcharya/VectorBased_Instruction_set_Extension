@@ -138,6 +138,15 @@ public class Memory {
         return 1;
     }
 
+    //for debugging
+    public int instrRead(int PC,String name){
+        PC = PC % size; // Wrap around if needed
+        int offset = PC % lineLength;
+        int lineNum = (PC - offset)  / lineLength;
+
+        return data[lineNum][offset];
+    }
+
     public void writeSingleValueInCache(int tag, int offset, int value) {
         data[tag][offset] = value;
         lineData.get(tag).write(offset, value);
