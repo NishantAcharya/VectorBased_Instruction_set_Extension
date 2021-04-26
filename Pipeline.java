@@ -641,7 +641,7 @@ public class Pipeline implements NotifyAvailable {
                                         j++;
                                     }
                                     while(check == Memory.WAIT) {
-                                        check = memory.writeLinePartial(name, start,line,4);
+                                        check = memory.writeLinePartial(name, start/4,line,4);
                                     }
 
                                     start += 4;

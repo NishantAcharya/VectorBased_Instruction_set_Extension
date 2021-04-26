@@ -354,7 +354,7 @@ public class Cache extends Memory {
             }
 
             lru[set][3] =1;
-            super.writeLinePartial(callingFrom,address/4,line,size);
+            super.writeLinePartial(callingFrom,address,line,size);
             dirty[tagLoc] = true;
             //for demo
             int[] cLine = getCacheLine(tagLoc);
@@ -364,7 +364,7 @@ public class Cache extends Memory {
 
             return 1;
         }else{
-            int check = nextMemory.writeLinePartial("Cache",address/4,line,size);
+            int check = nextMemory.writeLinePartial("Cache",address,line,size);
             if (check == Memory.WAIT)
                 return Memory.WAIT;
             // address added for writeback in case of dirty bit found on 1
