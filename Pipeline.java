@@ -3,6 +3,7 @@ import java.util.ArrayList;
 public class Pipeline implements NotifyAvailable {
 
     private Stage[] stages;
+    private Stage lastStage;
 
     private boolean runningProgram = false;
     private boolean usePipeline = true;
@@ -44,6 +45,8 @@ public class Pipeline implements NotifyAvailable {
         stages[2].setToNotify(usePipeline ? stages[1] : null);
         stages[3].setToNotify(usePipeline ? stages[2] : null);
         stages[4].setToNotify(usePipeline ? stages[3] : this);
+
+        lastStage = stages[0];
 
         runningProgram = true;
         this.completed = completed;
@@ -103,6 +106,9 @@ public class Pipeline implements NotifyAvailable {
 
         public void run(Instruction i) {
             if (i.id >= endID) return;
+
+            if (this == lastStage || !usePipeline)
+                Main.cycle();
 
             this.finishedRun = false;
             this.instruction = i;
@@ -761,6 +767,9 @@ public class Pipeline implements NotifyAvailable {
             nextStageAvailable = false;
             Instruction instrForNextStage = instruction;
             instruction = null;
+
+            if (this == lastStage)
+                lastStage = nextStage;
 
             if (instrForNextStage.isBranchingInstruction() && name.equals("Fetch")) {
                 instrForNextStage.addCallback("Memory Access", () -> notifyLastStage());

@@ -28,6 +28,7 @@ import java.text.ParseException;
 
 public class Main extends Application {
     private static Main instance = null;
+    public int cycles;
 
     private Memory RAM;
     private Cache cache;
@@ -185,8 +186,9 @@ public class Main extends Application {
                 consoleOutput = "";
                 programTxt.setText(loaded);
 
-                final long startTime = System.currentTimeMillis();
                 Memory memory = useCacheCB.isSelected() ? cache : RAM;
+
+                cycles = 0;
 
                 pipeline.run(24000, usePipeCB.isSelected(), memory, () -> {
                     System.out.println("Finished running " + fileName);
@@ -195,7 +197,7 @@ public class Main extends Application {
                         Main.print("~=~=~=~=~=~=~=~=~=~=~");
                         Main.print("Finished running " + fileName);
                         memoryTable.refresh();
-                        programTimeLabel.setText(fileName + " ran in " + (System.currentTimeMillis() - startTime) / 1000.0 + "s");
+                        programTimeLabel.setText(fileName + " ran in " + cycles  + " cycles");
                     });
                 });
             } catch (IOException e) {
@@ -412,6 +414,12 @@ public class Main extends Application {
         vb.setStyle("-fx-padding: 12 12 12 12;");
 
         return vb;
+    }
+
+    public static void cycle() {
+        if (instance == null) return;
+
+        instance.cycles += 1;
     }
 
     public static void print(String output) {
