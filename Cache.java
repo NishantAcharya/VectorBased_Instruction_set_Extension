@@ -283,6 +283,7 @@ public class Cache extends Memory {
                 }
             }
             //Only returning the requested amount of words
+            lru[set][3] =1;
             int[] cacheLine =  this.getCacheLine(tagLoc);
             int[] returnLine = new int[4];
             for(int i = 0; i < 4; i++){
@@ -307,7 +308,7 @@ public class Cache extends Memory {
                 } else if (lru[set][i%4] > lru[set][maxLRULoc%4])
                     maxLRULoc = i;
 
-
+            lru[set][3] =1;
             if (nextLoc == -1) // Cache is full, take LRU
                 nextLoc = maxLRULoc;
             int[] line = nextMemory.getLine(callingFrom, address);
@@ -352,10 +353,12 @@ public class Cache extends Memory {
                 }
             }
 
+            lru[set][3] =1;
             super.writeLinePartial(callingFrom,address/4,line,size);
             dirty[tagLoc] = true;
             //for demo
             int[] cLine = getCacheLine(tagLoc);
+
             lineData.set(tagLoc, new LineData(0, tag, cLine[0], cLine[1], cLine[2], cLine[3]));
             lineData.get(tagLoc).v.set(1);
 
