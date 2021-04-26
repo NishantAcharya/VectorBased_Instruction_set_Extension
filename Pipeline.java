@@ -107,7 +107,7 @@ public class Pipeline implements NotifyAvailable {
         public void run(Instruction i) {
             if (i.id >= endID) return;
 
-            if (this == lastStage)
+            if (this == lastStage || !usePipeline)
                 Main.cycle();
 
             this.finishedRun = false;

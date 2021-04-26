@@ -8,12 +8,11 @@ import java.util.Arrays;
 public class Memory {
     public ObservableList<LineData> lineData;
 
-    private final static int DELAY_MS = 1; // ms delay
     public final static int WAIT = -93902354;
     private int lineLength = 4;
     private int size;
     private int[][] data; // Data is a 2d array of lines, each with LINE_LENGTH words
-    private int delay = 3;
+    private int delay = 100;
 
     private String currentlyWaiting = "";
     private int currWait = 0;
@@ -77,7 +76,6 @@ public class Memory {
 
     public int read(String callingFrom, int address) {
         if (needsToWait(callingFrom, address)) {
-            delay();
             return Memory.WAIT;
         }
 
@@ -90,7 +88,6 @@ public class Memory {
 
     public int[] getLine(String callingFrom, int address) {
         if (needsToWait(callingFrom, address)) {
-            delay();
             return new int[]{Memory.WAIT};
         }
 
@@ -103,7 +100,6 @@ public class Memory {
 
     public int write(String callingFrom, int address, int value) {
         if (needsToWait(callingFrom, address)) {
-            delay();
             return Memory.WAIT;
         }
 
@@ -119,7 +115,6 @@ public class Memory {
 
     public int writeLine(String callingFrom, int lineNum, int[] line) {
         if (needsToWait(callingFrom, lineNum)) {
-            delay();
             return Memory.WAIT;
         }
 
@@ -187,12 +182,6 @@ public class Memory {
 
     public int getSize(){
         return size;
-    }
-
-    private void delay() {
-        try {
-            Thread.sleep(DELAY_MS);
-        } catch (Exception e) {}
     }
 
     // Holds cache line data to display in table
