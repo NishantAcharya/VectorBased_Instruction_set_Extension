@@ -291,12 +291,33 @@ public class Cache extends Memory {
             return returnLine;
         }
         else{
+            int nextLoc = -1;
+
+            //Finding the set of the address
+            set = (address / 16)%4; //Setting set to cycle of 16 words
+
+            //Setting maxLRULoc to the start of the set
+            int maxLRULoc = set*4;
+
+            // Look for empty spot and find least recently used full spot
+            for (int i = set*4; i < (set*4)+lru[set].length; i++)
+                if (tags[i] == -1 && !valid[i]) {
+                    nextLoc = i;
+                    break;
+                } else if (lru[set][i%4] > lru[set][maxLRULoc%4])
+                    maxLRULoc = i;
+
+
+            if (nextLoc == -1) // Cache is full, take LRU
+                nextLoc = maxLRULoc;
             int[] line = nextMemory.getLine(callingFrom, address);
 
             if (line[0] == Memory.WAIT)
                 return new int[]{Memory.WAIT};
             // address added for writeback in case of dirty bit found on 1
-            super.writeLine("Cache",address/4,line);
+            super.writeLine("Cache",nextLoc,line);
+            lineData.set(nextLoc, new LineData(0, tag, line[0], line[1], line[2], line[3]));
+            lineData.get(nextLoc).v.set(1);
             return line;
         }
     }
