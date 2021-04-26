@@ -71,6 +71,7 @@ public class Memory {
             currWait--;
         }
 
+        Main.cycle();
         return true;
     }
 
